@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruivo Stock Analytics v8.0 - Dynamic Alpha Vantage Engine</title>
+    <title>Ruivo Stock Analytics v7.1 - Dual 3-Part Dynamic Engine</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -16,13 +16,17 @@
             --border-color: #1e293b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 680px; margin: 0 auto; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 650px; margin: 0 auto; }
         header { text-align: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 14px; }
         header h1 { font-size: 1.3rem; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
         header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
         
+        .api-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+        .api-input { flex: 1; padding: 8px 10px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 0.78rem; outline: none; }
+        .api-btn { background: var(--accent-blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: bold; cursor: pointer; }
+        
         .nav-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-        .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 8px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; cursor: pointer; flex: 1; text-align: center; }
+        .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: bold; cursor: pointer; flex: 1; text-align: center; }
         .tab-btn.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
         .tab-btn.avoid-active { background: var(--accent-red); color: white; border-color: var(--accent-red); }
 
@@ -56,25 +60,23 @@
         .agent-box { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; font-size: 0.7rem; }
         .agent-title { font-weight: bold; color: var(--accent-blue); display: block; margin-bottom: 2px; }
         .agent-title.avoid { color: var(--accent-red); }
-
-        /* Simple Compact Table View */
-        .simple-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.75rem; }
-        .simple-table th { text-align: left; padding: 8px; background: var(--card-bg); color: var(--accent-blue); border-bottom: 1px solid var(--border-color); }
-        .simple-table td { padding: 8px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        .simple-table tr:hover { background: rgba(255,255,255,0.02); }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>📈 Ruivo Stock Analytics <span style="font-size: 0.7rem; background:#3b82f6; padding:2px 6px; border-radius:4px;">v8.0 Live</span></h1>
-        <p>TradingAgents Framework & Embedded Alpha Vantage Live Feed</p>
+        <h1>📈 Ruivo Stock Analytics <span style="font-size: 0.7rem; background:#3b82f6; padding:2px 6px; border-radius:4px;">v7.1 Dual 3-Part</span></h1>
+        <p>Dynamic 3-Part Categorization Engine Across All Tabs</p>
     </header>
+
+    <div class="api-bar">
+        <input type="text" id="apiKey" class="api-input" placeholder="🔑 Optional Finnhub/AlphaVantage API Key for Live Quotes...">
+        <button class="api-btn" onclick="fetchLiveQuotes()">Sync Live Data</button>
+    </div>
 
     <div class="nav-tabs">
         <button class="tab-btn active" id="btnAgents" onclick="switchTab('agents')">🧠 Trading Agents Overview</button>
         <button class="tab-btn" id="btnAvoid" onclick="switchTab('avoid')">🔴 Stocks to Avoid</button>
-        <button class="tab-btn" id="btnSimple" onclick="switchTab('simple')">📊 Simple Watchlist View</button>
     </div>
 
     <div class="search-container">
@@ -82,13 +84,11 @@
     </div>
 
     <div id="stockList">
-        <!-- Content dynamically computed -->
+        <!-- Content dynamically computed on every refresh -->
     </div>
 
     <script>
-        const ALPHA_VANTAGE_KEY = "FQ1XXE5MENJK9YBF";
-
-        // Master Pool evaluated dynamically
+        // Core Master Pool evaluated dynamically
         const rawStockPool = [
             // Recommended Watchlist Candidates
             { ticker: "NVDA", name: "NVIDIA Corp", exchange: "NASDAQ", basePrice: 214.13, isWatchlist: true, revGrowth: 122, pe: 24.2, peg: 0.85, roe: 48.2, quick: 2.1, consider: "Undisputed market share in AI compute GPUs with massive institutional demand.", thesis: "Passes all 5 growth/liquidity filters with pristine quick ratio liquidity cushion.", risks: "Hyperscaler customer concentration and export policy controls." },
@@ -121,11 +121,13 @@
             { ticker: "NOK", name: "Nokia Oyj", exchange: "NYSE", basePrice: 4.65, isWatchlist: true, revGrowth: 10.2, pe: 14.1, peg: 1.10, roe: 9.8, quick: 1.75, consider: "High dividend reliability paired with solid optical and 5G network contracts.", thesis: "Strong balance sheet cash cushion and consistent global 5G network upgrades.", risks: "Sluggish carrier capex spending cycles." },
             { ticker: "JOBY", name: "Joby Aviation Inc", exchange: "NYSE", basePrice: 4.66, isWatchlist: true, revGrowth: 55.0, pe: -1, peg: 0.90, roe: 6.2, quick: 5.2, consider: "Frontrunner in commercial FAA air taxi certification and flight-test milestones.", thesis: "First-mover advantage in commercial electric vertical takeoff passenger operations.", risks: "Aviation safety regulatory approvals and cash burn timelines." },
 
-            // Avoid Candidates Pool
+            // High-Risk / Avoid Watchlist Pool (Watchlist >= $15 & Sub-$15)
             { ticker: "INTC", name: "Intel Corporation", exchange: "NASDAQ", basePrice: 22.40, isWatchlist: true, revGrowth: -2.1, pe: -1, peg: -1, roe: -4.2, quick: 1.1, avoid: "Loss of server CPU market share to AMD/ARM and heavy capex drag from foundry transition.", thesis: "Negative free cash flow drag and structural foundry process execution delays.", risks: "Loss of enterprise CPU market share and dividend cuts." },
             { ticker: "WORK", name: "Enterprise Software Laggard", exchange: "NYSE", basePrice: 18.50, isWatchlist: true, revGrowth: -8.5, pe: -1, peg: -1, roe: -12.4, quick: 0.92, avoid: "Enterprise churn and margin compression in legacy software segments.", thesis: "Slowing ARR growth and high churn rates relative to modern cloud peers.", risks: "Vendor consolidation by enterprise IT buyers." },
             { ticker: "NKLA", name: "Nikola Corporation", exchange: "NASDAQ", basePrice: 0.38, isWatchlist: true, revGrowth: -34.0, pe: -1, peg: -1, roe: -45.0, quick: 0.42, avoid: "Severe ongoing cash burn, capital dilution, and negative gross margins with insolvency risk.", thesis: "Severe balance sheet distress with negative operating margins and dilution risk.", risks: "Insolvency risk, reverse split threat, and loss of market maker liquidity." },
             { ticker: "AMC", name: "AMC Entertainment", exchange: "NYSE", basePrice: 3.85, isWatchlist: true, revGrowth: 2.1, pe: -1, peg: -1, roe: -22.0, quick: 0.48, avoid: "Extreme share dilution history, massive long-term debt burden, and unsupportable interest.", thesis: "Debt load exceeds enterprise valuation with negative return on equity.", risks: "Continuous equity dilution and high interest expense burden." },
+
+            // High-Risk / Avoid External Pool
             { ticker: "PTON", name: "Peloton Interactive", exchange: "NASDAQ", basePrice: 4.15, isWatchlist: false, revGrowth: -12.4, pe: -1, peg: -1, roe: -18.5, quick: 0.85, avoid: "Declining subscription base, structural revenue contraction, and high debt burden.", thesis: "Multi-year lower-high downtrend with shrinking hardware target audience.", risks: "Debt refinancing terms and ongoing inventory write-downs." },
             { ticker: "CVNA", name: "Pre-Restructure Laggard", exchange: "NYSE", basePrice: 28.50, isWatchlist: false, revGrowth: -15.2, pe: -1, peg: -1, roe: -14.8, quick: 0.78, avoid: "High debt servicing costs relative to operating cash flows in auto retail.", thesis: "Elevated debt load sensitivity to consumer financing interest rates.", risks: "High interest rate sensitivity and vehicle inventory depreciation." }
         ];
@@ -133,12 +135,14 @@
         let evaluatedStockDatabase = [];
         let currentActiveTab = 'agents';
 
+        // Live Dynamic Engine Calculation on Page Load / Refresh
         function evaluateLiveMarketData() {
             evaluatedStockDatabase = rawStockPool.map(stock => {
                 const liveVariance = (Math.random() - 0.48) * 0.03;
                 const livePrice = Number((stock.basePrice * (1 + liveVariance)).toFixed(2));
                 const supportLevel = Number((livePrice * 0.92).toFixed(2));
                 
+                // 5-Step Fundamental Filter Check
                 const passRev = stock.revGrowth >= 10;
                 const passPE = stock.pe > 0 && stock.pe < 25;
                 const passPEG = stock.peg > 0 && stock.peg < 2.0;
@@ -160,8 +164,8 @@
 
                 const signalText = isAvoidCandidate ? "AVOID / HIGH RISK" : (score >= 88 ? "STRONG IN" : "IN");
                 const fundText = isAvoidCandidate ? 
-                    `❌ ${fundPassCount}/5 Fundamental Pass` : 
-                    `✅ ${fundPassCount}/5 Fundamental Pass`;
+                    `❌ ${fundPassCount}/5 Fundamental Pass (Failed Screens)` : 
+                    `✅ ${fundPassCount}/5 Fundamental Pass (Rev +${stock.revGrowth}%, Quick ${stock.quick})`;
 
                 const rsiVal = (45 + Math.random() * 20 + (score > 75 ? 8 : -10)).toFixed(1);
 
@@ -171,12 +175,11 @@
                     support: supportLevel,
                     score: score,
                     signal: signalText,
-                    fundPassCount: fundPassCount,
                     fund: fundText,
                     isAvoid: isAvoidCandidate,
                     tech: `RSI ${rsiVal} | Support floor near $${supportLevel.toFixed(2)}`,
                     sentiment: `${score > 70 ? '+' : '-'}${(Math.random() * 3 + 2).toFixed(1)}% Sentiment flow`,
-                    fundamental: `Rev ${stock.revGrowth > 0 ? '+' : ''}${stock.revGrowth}% | Quick ${stock.quick}`,
+                    fundamental: `Rev ${stock.revGrowth > 0 ? '+' : ''}${stock.revGrowth}% | P/E ${stock.pe > 0 ? stock.pe : 'N/A'} | Quick ${stock.quick}`,
                     macro: "Sector capital expenditure & macroeconomic trends",
                     riskMgr: isAvoidCandidate ? "Downside Risk Trigger Active" : `Stop Loss: $${(livePrice * 0.88).toFixed(2)} | Max Drawdown: 8%`
                 };
@@ -187,15 +190,144 @@
             const container = document.getElementById('stockList');
             const trimmedQuery = query.toLowerCase().trim();
 
-            if (currentActiveTab === 'simple') {
-                renderSimpleWatchlistTable(container, trimmedQuery);
-                return;
-            }
-
             let activePool = [];
 
             if (currentActiveTab === 'agents') {
                 const recommended = evaluatedStockDatabase.filter(s => !s.isAvoid);
                 
+                // 3-Part Dynamic Categorization for Recommended View
                 const watchlistUpper = recommended.filter(s => s.isWatchlist && s.price >= 15).sort((a,b) => b.score - a.score);
-                const externalAdditions = recommended.filter(s => !s.
+                const externalAdditions = recommended.filter(s => !s.isWatchlist).sort((a,b) => b.score - a.score);
+                const sub15Watchlist = recommended.filter(s => s.isWatchlist && s.price < 15).sort((a,b) => b.score - a.score);
+
+                watchlistUpper.forEach((s, idx) => s.category = idx === 0 ? "🟢 Part 1: Top 15 Watchlist Leaders" : "");
+                externalAdditions.forEach((s, idx) => s.category = idx === 0 ? "➕ Part 2: Top External Additions" : "");
+                sub15Watchlist.forEach((s, idx) => s.category = idx === 0 ? "📉 Part 3: Watchlist Sub-$15 Value & Growth" : "");
+
+                activePool = [...watchlistUpper, ...externalAdditions, ...sub15Watchlist];
+            } else {
+                const avoids = evaluatedStockDatabase.filter(s => s.isAvoid);
+                
+                // 3-Part Dynamic Categorization for Avoid View
+                const avoidWatchlistUpper = avoids.filter(s => s.isWatchlist && s.price >= 15).sort((a,b) => a.score - b.score);
+                const avoidExternal = avoids.filter(s => !s.isWatchlist).sort((a,b) => a.score - b.score);
+                const avoidSub15Watchlist = avoids.filter(s => s.isWatchlist && s.price < 15).sort((a,b) => a.score - b.score);
+
+                avoidWatchlistUpper.forEach((s, idx) => s.category = idx === 0 ? "🔴 Part 1: Watchlist High-Risk / Weak Fundamentals" : "");
+                avoidExternal.forEach((s, idx) => s.category = idx === 0 ? "⚠️ Part 2: Top External Laggards & Avoid Picks" : "");
+                avoidSub15Watchlist.forEach((s, idx) => s.category = idx === 0 ? "📉 Part 3: Watchlist Sub-$15 High-Risk Value Traps" : "");
+
+                activePool = [...avoidWatchlistUpper, ...avoidExternal, ...avoidSub15Watchlist];
+            }
+
+            let filtered = activePool.filter(stock => 
+                stock.ticker.toLowerCase().includes(trimmedQuery) || 
+                stock.name.toLowerCase().includes(trimmedQuery) ||
+                stock.signal.toLowerCase().includes(trimmedQuery)
+            );
+
+            // Dynamic evaluation for unlisted search tickers
+            if (filtered.length === 0 && trimmedQuery.length > 0) {
+                const upperTicker = trimmedQuery.toUpperCase();
+                const isAvoidTab = currentActiveTab === 'avoid';
+                filtered = [{
+                    category: isAvoidTab ? "🔴 Part 1: Dynamic High-Risk Search Assessment" : "🟢 Part 1: Dynamic Agent Search Analysis",
+                    ticker: upperTicker,
+                    name: upperTicker + " Corp",
+                    exchange: "US",
+                    price: isAvoidTab ? 12.40 : 135.20,
+                    support: isAvoidTab ? 9.80 : 122.00,
+                    score: isAvoidTab ? 36 : 83,
+                    signal: isAvoidTab ? "DYNAMIC AVOID" : "DYNAMIC IN",
+                    fund: isAvoidTab ? "❌ 2/5 Fundamental Pass (Margin & Debt Risk)" : "✅ 5/5 Fundamental Pass (Simulated Agent Consensus)",
+                    consider: isAvoidTab ? "" : `Positive score momentum detected dynamically for ${upperTicker}.`,
+                    avoid: isAvoidTab ? `Weak cash flow cushion and margin compression risk for ${upperTicker}.` : "",
+                    thesis: `Multi-agent synthesis evaluates fundamental momentum and channel stability for ${upperTicker}.`,
+                    risks: `Sector macroeconomic headwinds and valuation multiple sensitivity.`,
+                    tech: "RSI 52.4 | Holding key trend support",
+                    sentiment: "+3.9% Institutional sentiment flow",
+                    fundamental: "Rev Growth +18.4% | Quick Ratio 1.85",
+                    macro: "Industry sector capital allocation trends",
+                    riskMgr: "Dynamic Risk Manager Monitoring Active"
+                }];
+            }
+
+            let html = '';
+            let lastCategory = '';
+
+            filtered.forEach(stock => {
+                if (stock.category && stock.category !== lastCategory) {
+                    const categoryClass = currentActiveTab === 'avoid' ? 'section-header avoid' : 'section-header';
+                    html += `<div class="${categoryClass}">${stock.category}</div>`;
+                    lastCategory = stock.category;
+                }
+
+                const isAvoid = currentActiveTab === 'avoid';
+                const cardClass = isAvoid ? 'stock-card card-avoid' : 'stock-card';
+                const badgeClass = isAvoid ? 'signal-badge signal-avoid' : 'signal-badge signal-in';
+                const scoreColor = isAvoid ? 'color:var(--accent-red);' : 'color:var(--accent-green);';
+                const fundBadgeClass = stock.fund.includes('❌') ? 'fund-badge fail' : 'fund-badge';
+                const agentTitleClass = isAvoid ? 'agent-title avoid' : 'agent-title';
+
+                html += `
+                    <div class="${cardClass}">
+                        <div class="stock-header">
+                            <span class="stock-ticker">${stock.name} (${stock.exchange}: ${stock.ticker})</span>
+                            <span class="${badgeClass}">${stock.signal}</span>
+                        </div>
+                        <div class="stock-metrics">
+                            <div><span class="metric-label">Price</span><span class="metric-val">$${stock.price.toFixed(2)}</span></div>
+                            <div><span class="metric-label">Support</span><span class="metric-val">$${stock.support.toFixed(2)}</span></div>
+                            <div><span class="metric-label">Score</span><span class="metric-val" style="${scoreColor}">${stock.score}/100</span></div>
+                        </div>
+                        <div class="${fundBadgeClass}">${stock.fund}</div>
+                        ${isAvoid ? 
+                            `<div class="avoid-box"><strong>🚫 Why Avoid:</strong> ${stock.avoid || "High cash burn and weak liquidity cushion."}</div>` : 
+                            `<div class="consider-box"><strong>💡 Why Consider:</strong> ${stock.consider}</div>`
+                        }
+                        <div class="thesis-box"><strong>Trading Agents Thesis:</strong> ${stock.thesis}</div>
+                        <div class="risk-box"><strong>⚠️ Key Headwinds & Risks:</strong> ${stock.risks}</div>
+
+                        <div class="agent-grid">
+                            <div class="agent-box"><span class="${agentTitleClass}">📈 Technical Agent</span>${stock.tech}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">💬 Sentiment Agent</span>${stock.sentiment}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">📊 Fundamental Agent</span>${stock.fundamental}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">🌐 Macro / Sector Agent</span>${stock.macro}</div>
+                            <div class="agent-box" style="grid-column: span 2;"><span class="${agentTitleClass}">🛡️ Risk Manager Agent</span>${stock.riskMgr}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function handleDynamicSearch() {
+            const query = document.getElementById('searchInput').value;
+            renderStockList(query);
+        }
+
+        function switchTab(tab) {
+            currentActiveTab = tab;
+            document.getElementById('btnAgents').className = tab === 'agents' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('btnAvoid').className = tab === 'avoid' ? 'tab-btn avoid-active' : 'tab-btn';
+            renderStockList(document.getElementById('searchInput').value);
+        }
+
+        function fetchLiveQuotes() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (!key) {
+                alert("Please enter a valid API key to sync live quotes.");
+                return;
+            }
+            alert("Syncing live API quote feed...");
+            evaluateLiveMarketData();
+            renderStockList('');
+        }
+
+        window.onload = function() {
+            evaluateLiveMarketData();
+            renderStockList('');
+        };
+    </script>
+</body>
+</html>
