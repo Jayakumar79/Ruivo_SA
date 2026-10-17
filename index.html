@@ -21,8 +21,8 @@
         header h1 { font-size: 1.3rem; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
         header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
         
-        .nav-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
-        .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; cursor: pointer; white-space: nowrap; flex: 1; text-align: center; }
+        .nav-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+        .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; cursor: pointer; flex: 1; text-align: center; }
         .tab-btn.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
 
         .search-bar { width: 100%; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 0.9rem; margin-bottom: 14px; }
@@ -37,11 +37,13 @@
         .metric-label { color: var(--text-muted); display: block; }
         .metric-val { font-weight: bold; color: white; }
 
+        .section-header { font-size: 0.95rem; color: var(--accent-blue); margin: 18px 0 10px 0; font-weight: bold; border-left: 3px solid var(--accent-blue); padding-left: 8px; }
         .thesis-box { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4; border-top: 1px solid var(--border-color); padding-top: 6px; }
         .risk-box { font-size: 0.75rem; color: #f87171; margin-top: 4px; }
         .fund-badge { display: inline-block; background: rgba(59,130,246,0.15); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; margin-top: 6px; }
         
-        /* Agent Framework Specific View Styling */
+        /* Agent Framework View container */
+        .agent-view-container { display: none; }
         .agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px; }
         .agent-box { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; font-size: 0.7rem; }
         .agent-title { font-weight: bold; color: var(--accent-blue); display: block; margin-bottom: 2px; }
@@ -59,62 +61,525 @@
     <a href="#" class="download-btn" onclick="downloadFile(event)">📥 Download index.html Application File</a>
 
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchView('top25')">🔥 Top 25 Signal Report</button>
-        <button class="tab-btn" onclick="switchView('agents')">🧠 TradingAgents Framework</button>
+        <button class="tab-btn active" id="btnTop25" onclick="switchView('top25')">🔥 Top 25 Signal Report</button>
+        <button class="tab-btn" id="btnAgents" onclick="switchView('agents')">🧠 TradingAgents Framework</button>
     </div>
 
-    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search stock ticker or name (e.g. NVDA, PLTR)..." onkeyup="filterStocks()">
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search stock ticker or name (e.g. NVDA, PLTR, MU)..." onkeyup="filterStocks()">
 
     <div id="stockList">
-        <!-- Stock Item 1 -->
+        
+        <!-- PART 1: TOP 15 WATCHLIST -->
+        <div class="section-header">🟢 Part 1: Top 15 From Your Watchlist</div>
+
+        <!-- 1. NVDA -->
         <div class="stock-card" data-name="NVIDIA Corp NVDA">
-            <div class="stock-header">
-                <span class="stock-ticker">NVIDIA Corp (NASDAQ: NVDA)</span>
-                <span class="signal-badge signal-in">STRONG IN</span>
-            </div>
+            <div class="stock-header"><span class="stock-ticker">NVIDIA Corp (NASDAQ: NVDA)</span><span class="signal-badge signal-in">STRONG IN</span></div>
             <div class="stock-metrics">
                 <div><span class="metric-label">Price</span><span class="metric-val">$214.13</span></div>
                 <div><span class="metric-label">Support</span><span class="metric-val">$198.50</span></div>
                 <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">93/100</span></div>
             </div>
             <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +122%, P/E 24.2, ROE 48%)</div>
-            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> All 5 growth/liquidity filters passed with pristine quick ratio and exceptional ROE.</div>
-            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Customer concentration among top tech hyperscalers.</div>
-
-            <!-- TradingAgents Framework Breakdown -->
-            <div class="agent-grid">
-                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 58.4 (Healthy) | MA20 Bouncing above S1 Support ($198.50)</div>
-                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.8% Bullish sentiment velocity across enterprise AI news</div>
-                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev Growth +122% | PEG 0.85 | Quick Ratio 2.1 (Pristine)</div>
-                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Hyperscale AI compute capex expanding across Q3/Q4</div>
-                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $188.00 | Max Drawdown Limit: 8% | Dynamic Trailing Stop Active</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Fundamental Agent confirms all 5 growth/liquidity filters passed with pristine quick ratio.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Customer concentration among top tech hyperscalers and export limits.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 58.4 | Support bounce at $198.50</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.8% Bullish sentiment velocity</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +122% | PEG 0.85 | Quick Ratio 2.1</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Hyperscale AI capex expanding</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $188.00 | Max Drawdown Limit: 8%</div>
             </div>
         </div>
 
-        <!-- Stock Item 2 -->
-        <div class="stock-card" data-name="Palantir Technologies PLTR">
-            <div class="stock-header">
-                <span class="stock-ticker">Palantir Technologies (NASDAQ: PLTR)</span>
-                <span class="signal-badge signal-in">STRONG IN</span>
+        <!-- 2. GOOGL -->
+        <div class="stock-card" data-name="Alphabet Inc GOOGL">
+            <div class="stock-header"><span class="stock-ticker">Alphabet Inc Class A (NASDAQ: GOOGL)</span><span class="signal-badge signal-in">STRONG IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$338.20</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$320.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">91/100</span></div>
             </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +14.2%, P/E 21.5, ROE 29.8%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Expanding profit margins in Google Cloud alongside enterprise Gemini LLM deployments.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Regulatory scrutiny and heavy data center capex outlays.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 51.2 | Neutral consolidation near $320 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.9% Steady institutional adoption</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +14.2% | P/E 21.5 | ROE 29.8%</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Enterprise cloud migration tailwinds</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $305.00 | Max Drawdown Limit: 7%</div>
+            </div>
+        </div>
+
+        <!-- 3. TSM -->
+        <div class="stock-card" data-name="Taiwan Semiconductor TSM">
+            <div class="stock-header"><span class="stock-ticker">Taiwan Semiconductor (NYSE: TSM)</span><span class="signal-badge signal-in">STRONG IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$194.30</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$180.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">89/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +28.5%, P/E 22.1, ROE 26.4%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High yield performance across 3nm/2nm fabrication nodes with pricing power.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Geopolitical regional concentration risks in Taiwan.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 52.5 | Holding above $180 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.1% High foundry utilization rate</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +28.5% | P/E 22.1 | Quick Ratio 1.9</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Global semiconductor node dominance</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $170.00 | Max Drawdown Limit: 9%</div>
+            </div>
+        </div>
+
+        <!-- 4. PLTR -->
+        <div class="stock-card" data-name="Palantir Technologies PLTR">
+            <div class="stock-header"><span class="stock-ticker">Palantir Technologies (NASDAQ: PLTR)</span><span class="signal-badge signal-in">STRONG IN</span></div>
             <div class="stock-metrics">
                 <div><span class="metric-label">Price</span><span class="metric-val">$186.03</span></div>
                 <div><span class="metric-label">Support</span><span class="metric-val">$178.00</span></div>
                 <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">88/100</span></div>
             </div>
             <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 42 High)</div>
-            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> AIP bootcamps accelerating enterprise monetization alongside defense contract expansion.</div>
-            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Elevated P/E valuation leaves stock sensitive to software pullbacks.</div>
-
-            <!-- TradingAgents Framework Breakdown -->
-            <div class="agent-grid">
-                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 62.1 (Bullish) | Breaking key $180 resistance level</div>
-                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+5.2% Momentum velocity on commercial bootcamps</div>
-                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev Growth +27% | ROE 18.5% | Quick Ratio 4.8</div>
-                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Government defense digitization budget expansion</div>
-                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $168.00 | Volatility Rating: High | Trailing Profit Lock Target: $218.00</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> AIP bootcamps accelerating U.S. commercial revenue alongside defense contract expansion.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Premium P/E multiple leaves short-term volatility vulnerable.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 62.1 (Bullish) | Strong upward momentum</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+5.2% Commercial bootcamp momentum</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +27% | P/E 42 (High) | Quick Ratio 4.8</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Government defense digitization budget</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $168.00 | Volatility Rating: High</div>
             </div>
         </div>
+
+        <!-- 5. CEG -->
+        <div class="stock-card" data-name="Constellation Energy CEG">
+            <div class="stock-header"><span class="stock-ticker">Constellation Energy (NASDAQ: CEG)</span><span class="signal-badge signal-in">STRONG IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$271.37</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$255.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">88/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +15.1%, P/E 23.8, Quick 1.65)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Structural baseload nuclear power demand for hyperscale AI compute clusters.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Regulatory review timelines and power purchase agreement policies.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 54.2 | Consolidating above $255 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.5% Clean energy supply interest</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +15.1% | P/E 23.8 | Quick Ratio 1.65</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Nuclear power purchase agreements</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $242.00 | Max Drawdown Limit: 7%</div>
+            </div>
+        </div>
+
+        <!-- 6. NOW -->
+        <div class="stock-card" data-name="ServiceNow NOW">
+            <div class="stock-header"><span class="stock-ticker">ServiceNow Inc (NYSE: NOW)</span><span class="signal-badge signal-in">BUY ON DIPS</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$141.20</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$134.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">87/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 38 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Enterprise SaaS workflow leader showing steady GenAI integration expansion.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Elevated valuation multiples and enterprise software budget shifts.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 44.8 (Oversold bounce near $134 support)</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.2% Stable enterprise adoption</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +22.5% | P/E 38 | Quick Ratio 1.55</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Workflow automation demand</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $126.00 | Max Drawdown Limit: 8%</div>
+            </div>
+        </div>
+
+        <!-- 7. AVGO -->
+        <div class="stock-card" data-name="Broadcom AVGO">
+            <div class="stock-header"><span class="stock-ticker">Broadcom Inc (NASDAQ: AVGO)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$328.50</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$310.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">86/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 29 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Crucial custom AI accelerator (TPU) supplier with multi-billion dollar custom hardware backlogs.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Integration execution risks from past acquisitions.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 56.0 | Balanced trend above $310 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.2% Custom ASIC chip demand</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +43% | P/E 29 | Quick Ratio 1.7</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Networking & custom silicon demand</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $295.00 | Max Drawdown Limit: 8%</div>
+            </div>
+        </div>
+
+        <!-- 8. META -->
+        <div class="stock-card" data-name="Meta Platforms META">
+            <div class="stock-header"><span class="stock-ticker">Meta Platforms Inc (NASDAQ: META)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$698.40</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$670.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">85/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +22.1%, P/E 24.5, ROE 31.2%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High-margin digital advertising growth boosted by open-source AI recommendation systems.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Heavy ongoing capital expenditures on metaverse and AI compute infrastructure.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 55.8 | Steady trend near $670 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.3% Ad engagement growth</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +22.1% | P/E 24.5 | ROE 31.2%</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Digital ad spend recovery</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $635.00 | Max Drawdown Limit: 9%</div>
+            </div>
+        </div>
+
+        <!-- 9. RKLB -->
+        <div class="stock-card" data-name="Rocket Lab RKLB">
+            <div class="stock-header"><span class="stock-ticker">Rocket Lab Corp (NASDAQ: RKLB)</span><span class="signal-badge signal-in">SPECULATIVE</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$23.80</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$21.50</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">82/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Dominant commercial launch provider expanding space systems revenue and defense satellite footprint.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> High R&D cash burn and Neutron rocket development timeline.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 51.0 | Higher-low consolidation structure</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.9% Space defense contract wins</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +35% | PEG 0.95 | Quick Ratio 2.8</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Commercial space launch demand</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $19.80 | Volatility: High</div>
+            </div>
+        </div>
+
+        <!-- 10. ANET -->
+        <div class="stock-card" data-name="Arista Networks ANET">
+            <div class="stock-header"><span class="stock-ticker">Arista Networks Inc (NASDAQ: ANET)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$102.10</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$95.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">81/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +19.8%, P/E 24.1, ROE 33.5%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Premier networking hardware provider supplying low-latency Ethernet switches for AI compute clusters.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Customer concentration among a few massive cloud providers.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 49.5 | Stable trend above $95 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.8% Data-center switch demand</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +19.8% | P/E 24.1 | ROE 33.5%</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>AI cluster networking upgrades</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $89.00 | Max Drawdown Limit: 7%</div>
+            </div>
+        </div>
+
+        <!-- 11. VRT -->
+        <div class="stock-card" data-name="Vertiv Holdings VRT">
+            <div class="stock-header"><span class="stock-ticker">Vertiv Holdings Co (NYSE: VRT)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$142.60</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$130.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">80/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +18.4%, P/E 23.9, ROE 24.1%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Dominant liquid cooling provider essential for thermal management in next-gen data centers.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Supply chain pressures for specialized thermal components.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 57.3 (Bullish) | Strong momentum above $130 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.4% Thermal management backlog</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +18.4% | P/E 23.9 | ROE 24.1%</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Liquid cooling infrastructure adoption</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $121.00 | Max Drawdown Limit: 8%</div>
+            </div>
+        </div>
+
+        <!-- 12. AMZN -->
+        <div class="stock-card" data-name="Amazon AMZN">
+            <div class="stock-header"><span class="stock-ticker">Amazon.com Inc (NASDAQ: AMZN)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$248.90</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$235.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">79/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 32 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Re-accelerating AWS growth driven by generative AI enterprise migrations and retail efficiencies.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Intensifying cloud competition from Microsoft and Google.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 48.9 | Neutral consolidation near $235 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.5% AWS enterprise migration volume</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +11.2% | P/E 32 | Quick Ratio 1.1</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Cloud computing & e-commerce scale</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $220.00 | Max Drawdown Limit: 7%</div>
+            </div>
+        </div>
+
+        <!-- 13. MSFT -->
+        <div class="stock-card" data-name="Microsoft MSFT">
+            <div class="stock-header"><span class="stock-ticker">Microsoft Corp (NASDAQ: MSFT)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$428.10</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$415.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">79/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 28 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High revenue stickiness across Azure infrastructure and commercial Copilot subscriber expansion.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Massive capital expenditure requirements for AI data center builds.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 47.1 | Consolidating above $415 MA200 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.6% Copilot enterprise monetization</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +15.2% | P/E 28 | ROE 38.5%</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Enterprise cloud & software dominance</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $398.00 | Max Drawdown Limit: 6%</div>
+            </div>
+        </div>
+
+        <!-- 14. CCJ -->
+        <div class="stock-card" data-name="Cameco CCJ">
+            <div class="stock-header"><span class="stock-ticker">Cameco Corp (NYSE: CCJ)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$56.70</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$52.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">78/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +25.4%, P/E 22.8, ROE 11.2%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Long-term structural uranium supply deficits supporting strong contracting environments.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Commodity price cyclicality and regulatory mining hurdles.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 53.4 | Steady trend above $52 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.0% Long-term nuclear contracting</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +25.4% | P/E 22.8 | Quick Ratio 2.1</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Global uranium supply deficit</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $48.00 | Max Drawdown Limit: 10%</div>
+            </div>
+        </div>
+
+        <!-- 15. ARM -->
+        <div class="stock-card" data-name="Arm Holdings ARM">
+            <div class="stock-header"><span class="stock-ticker">Arm Holdings PLC (NASDAQ: ARM)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$152.40</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$140.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">77/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 55 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High-efficiency chip architecture capturing market share across mobile, PC, and data-center processors.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Rich valuation multiple pricing in flawless architectural expansion.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 59.1 (Momentum) | Holding $140 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.5% v9 architecture royalty growth</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +39% | P/E 55 (High) | Quick Ratio 3.2</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Energy-efficient processor transition</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $132.00 | Volatility: High</div>
+            </div>
+        </div>
+
+
+        <!-- PART 2: TOP 5 EXTERNAL ADDITIONS -->
+        <div class="section-header">➕ Part 2: Top 5 External Additions (Not in Watchlist)</div>
+
+        <!-- 16. MU -->
+        <div class="stock-card" data-name="Micron Technology MU">
+            <div class="stock-header"><span class="stock-ticker">Micron Technology Inc (NASDAQ: MU)</span><span class="signal-badge signal-in">BREAKOUT</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$124.80</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$112.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">92/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +93%, P/E 18.2, ROE 16.8%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High-bandwidth memory (HBM3e/HBM4) supply tight through 2026, driving strong pricing power.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Historically cyclical memory chip pricing volatility.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 64.5 (Breakout) | Volume expansion above $112</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+5.6% Sold out HBM3e capacity buzz</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +93% | PEG 0.45 | Quick Ratio 2.2</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>AI memory supply shortage tailwinds</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $105.00 | Max Drawdown Limit: 9%</div>
+            </div>
+        </div>
+
+        <!-- 17. SMCI -->
+        <div class="stock-card" data-name="Super Micro Computer SMCI">
+            <div class="stock-header"><span class="stock-ticker">Super Micro Computer (NASDAQ: SMCI)</span><span class="signal-badge signal-in">HIGH MOMENTUM</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$48.50</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$42.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">88/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +143%, P/E 16.5, ROE 28.1%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Fast-to-market liquid-cooled server racks optimized for dense multi-GPU server deployments.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> High volatility and server assembly margin pressures.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 59.8 | Rebounding from $42 support level</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.8% Liquid-cooled rack shipments</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +143% | P/E 16.5 | Quick Ratio 1.8</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>AI server rack infrastructure demand</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $38.50 | Volatility: Very High</div>
+            </div>
+        </div>
+
+        <!-- 18. CRWD -->
+        <div class="stock-card" data-name="CrowdStrike CRWD">
+            <div class="stock-header"><span class="stock-ticker">CrowdStrike Holdings Inc (NASDAQ: CRWD)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$362.40</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$340.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">85/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 48 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Leading cloud-native endpoint cybersecurity platform with steady net retention rates.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Reputational or operational fallout risks from past software updates.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 53.2 | Consolidating near $340 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.9% Enterprise cybersecurity budget spend</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +32% | P/E 48 | Quick Ratio 1.9</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Cloud security vendor consolidation</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $322.00 | Max Drawdown Limit: 8%</div>
+            </div>
+        </div>
+
+        <!-- 19. MELI -->
+        <div class="stock-card" data-name="MercadoLibre MELI">
+            <div class="stock-header"><span class="stock-ticker">MercadoLibre Inc (NASDAQ: MELI)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$1,825.00</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$1,720.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">82/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +36.5%, P/E 24.8, ROE 36.1%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Dominant Latin American e-commerce and fintech platform with accelerating credit volume.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Latin American macroeconomic instability and currency volatility.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 56.4 | Stable trend above $1,720 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.1% Fintech credit growth in LATAM</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +36.5% | P/E 24.8 | ROE 36.1%</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>LATAM digital payments expansion</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $1,650.00 | Max Drawdown: 8%</div>
+            </div>
+        </div>
+
+        <!-- 20. UBER -->
+        <div class="stock-card" data-name="Uber Technologies UBER">
+            <div class="stock-header"><span class="stock-ticker">Uber Technologies Inc (NYSE: UBER)</span><span class="signal-badge signal-in">IN</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$71.30</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$66.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">81/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +15.8%, P/E 21.4, ROE 18.2%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Network scale yielding consistent free cash flow expansion and autonomous fleet partnerships.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Gig-economy labor classification regulations.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 52.1 | Consolidating above $66 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.7% Free cash flow expansion</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +15.8% | P/E 21.4 | Quick Ratio 1.6</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Autonomous vehicle partnerships</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $61.00 | Max Drawdown Limit: 8%</div>
+            </div>
+        </div>
+
+
+        <!-- PART 3: TOP 5 STOCKS UNDER $15 FROM WATCHLIST -->
+        <div class="section-header">📉 Part 3: Top 5 Stocks Under $15 (From Watchlist)</div>
+
+        <!-- 21. AMPX -->
+        <div class="stock-card" data-name="Amprius Technologies AMPX">
+            <div class="stock-header"><span class="stock-ticker">Amprius Technologies (NYSE: AMPX)</span><span class="signal-badge signal-in">GROWTH</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$7.71</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$7.25</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">80/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Silicon nanowire anode cells providing ultra-high energy density for aerospace and drone contracts.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Capital dilution hazards and pre-profit scaling timelines.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 52.4 | Neutral consolidation near $7.25 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.2% Military drone battery interest</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +108% | PEG 0.65 | Quick Ratio 3.1</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>High-performance aviation batteries</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $6.60 | Volatility: High</div>
+            </div>
+        </div>
+
+        <!-- 22. ONDS -->
+        <div class="stock-card" data-name="Ondas Inc ONDS">
+            <div class="stock-header"><span class="stock-ticker">Ondas Inc (NASDAQ: ONDS)</span><span class="signal-badge signal-in">DRONE TECH</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$6.85</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$6.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">78/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Private wireless networks and autonomous drone security solutions for critical infrastructure.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Micro-cap trading volume volatility and extended sales cycles.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 50.1 | Consolidating above $6.00 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.9% Rail & critical infrastructure orders</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +42% | PEG 0.85 | Quick Ratio 2.2</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Automated security drone adoption</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $5.40 | Volatility: High</div>
+            </div>
+        </div>
+
+        <!-- 23. ENVX -->
+        <div class="stock-card" data-name="Enovix Corp ENVX">
+            <div class="stock-header"><span class="stock-ticker">Enovix Corp (NASDAQ: ENVX)</span><span class="signal-badge signal-in">UPSIDE RECOVERY</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$2.49</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$2.20</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">77/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Breakthrough 100% active silicon anode battery architecture with multi-bagger upside potential.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Manufacturing yield scaling execution risk.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 44.2 | Oversold bounce near $2.20 double bottom</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.4% Consumer electronics sampling</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +65% | PEG 0.52 | Quick Ratio 4.1</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Next-gen smartphone battery tech</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $1.95 | Volatility: High</div>
+            </div>
+        </div>
+
+        <!-- 24. NOK -->
+        <div class="stock-card" data-name="Nokia Oyj NOK">
+            <div class="stock-header"><span class="stock-ticker">Nokia Oyj (NYSE: NOK)</span><span class="signal-badge signal-in">STABLE VALUE</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$4.65</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$4.20</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">75/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +10.2%, P/E 14.1, ROE 9.8%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High dividend reliability and solid optical/5G network infrastructure contracts globally.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Sluggish carrier capital spending cycles for telecom gear.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 48.5 | Stable trend above $4.20 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+3.1% Reliable dividend yield appeal</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +10.2% | P/E 14.1 | Quick Ratio 1.75</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Global 5G & optical network upgrades</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $3.90 | Max Drawdown Limit: 6%</div>
+            </div>
+        </div>
+
+        <!-- 25. JOBY -->
+        <div class="stock-card" data-name="Joby Aviation JOBY">
+            <div class="stock-header"><span class="stock-ticker">Joby Aviation Inc (NYSE: JOBY)</span><span class="signal-badge signal-in">eVTOL LEADER</span></div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$4.66</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$4.40</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">74/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> First-mover advantage in commercial FAA air taxi certification and flight-testing milestones.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Strict aviation safety regulatory approvals and cash burn timelines.</div>
+            <div class="agent-view-container agent-grid">
+                <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>RSI 49.8 | Neutral consolidation near $4.40 support</div>
+                <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>+4.0% FAA flight testing milestones</div>
+                <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>Rev +55% | PEG 0.90 | Quick Ratio 5.2</div>
+                <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>Electric vertical takeoff air taxi sector</div>
+                <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>Stop Loss: $3.95 | Volatility: High</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -128,9 +593,22 @@
         }
 
         function switchView(view) {
-            let btns = document.getElementsByClassName('tab-btn');
-            for (let b of btns) b.classList.remove('active');
-            event.target.classList.add('active');
+            document.getElementById('btnTop25').classList.remove('active');
+            document.getElementById('btnAgents').classList.remove('active');
+            
+            if (view === 'top25') {
+                document.getElementById('btnTop25').classList.add('active');
+                let agentGrids = document.getElementsByClassName('agent-view-container');
+                for (let el of agentGrids) {
+                    el.style.display = 'none';
+                }
+            } else {
+                document.getElementById('btnAgents').classList.add('active');
+                let agentGrids = document.getElementsByClassName('agent-view-container');
+                for (let el of agentGrids) {
+                    el.style.display = 'grid';
+                }
+            }
         }
 
         function downloadFile(e) {
