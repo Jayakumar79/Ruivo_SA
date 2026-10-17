@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruivo Stock Analytics - Multi-Agent Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131b2e;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 600px; margin: 0 auto; }
+        header { text-align: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 16px; }
+        header h1 { font-size: 1.3rem; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        
+        .pipeline-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+        .pipeline-card h3 { font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .pipeline-steps { display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem; color: var(--text-muted); }
+        .step-item { background: rgba(59, 130, 246, 0.1); padding: 6px 10px; border-radius: 6px; border-left: 3px solid var(--accent-blue); }
+
+        .search-bar { width: 100%; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 0.9rem; margin-bottom: 14px; }
+        
+        .stock-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .stock-ticker { font-size: 0.95rem; font-weight: bold; }
+        .signal-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+        .signal-in { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        
+        .stock-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 0.75rem; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; }
+        .metric-label { color: var(--text-muted); display: block; }
+        .metric-val { font-weight: bold; color: white; }
+
+        .thesis-box { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4; border-top: 1px solid var(--border-color); padding-top: 6px; }
+        .risk-box { font-size: 0.75rem; color: #f87171; margin-top: 4px; }
+        .fund-badge { display: inline-block; background: rgba(59,130,246,0.15); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; margin-top: 6px; }
+        
+        .download-btn { display: block; width: 100%; text-align: center; background: var(--accent-blue); color: white; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 20px; margin-bottom: 20px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📈 Ruivo Stock Analytics <span style="font-size: 0.7rem; background:#3b82f6; padding:2px 6px; border-radius:4px;">v5.0</span></h1>
+        <p>TradingAgents Framework & 5-Step Fundamental Engine</p>
+    </header>
+
+    <a href="#" id="downloadLink" class="download-btn" onclick="downloadFile(event)">📥 Download index.html File</a>
+
+    <div class="pipeline-card">
+        <h3>🧠 Multi-Agent Analytics <span>🟢 Active</span></h3>
+        <div class="pipeline-steps">
+            <div class="step-item">1. Data Ingestion: Real-time price, RSI & Volume feeds</div>
+            <div class="step-item">2. Multi-Agent Synthesis: Technical, Sentiment, Macro & Risk</div>
+            <div class="step-item">3. 5-Step Fundamental Filter: Rev Growth ≥10% | P/E <25 | PEG <2.0 | ROE >5% | Quick >1.5</div>
+        </div>
+    </div>
+
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search stock ticker or name (e.g. NVDA, PLTR)..." onkeyup="filterStocks()">
+
+    <div id="stockList">
+        <!-- Stock 1 -->
+        <div class="stock-card" data-name="NVIDIA Corp NVDA">
+            <div class="stock-header">
+                <span class="stock-ticker">NVIDIA Corp (NASDAQ: NVDA)</span>
+                <span class="signal-badge signal-in">STRONG IN</span>
+            </div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$214.13</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$198.50</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">93/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +122%, P/E 24.2, ROE 48%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Fundamental Agent confirms all 5 growth/liquidity filters passed with pristine quick ratio liquidity cushion.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Hyperscaler customer concentration and export policy restrictions.</div>
+        </div>
+
+        <!-- Stock 2 -->
+        <div class="stock-card" data-name="Palantir Technologies PLTR">
+            <div class="stock-header">
+                <span class="stock-ticker">Palantir Technologies (NASDAQ: PLTR)</span>
+                <span class="signal-badge signal-in">STRONG IN</span>
+            </div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$186.03</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$178.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">88/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (P/E 42 High)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> AIP bootcamps accelerating U.S. commercial revenue alongside defense contract expansion.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Premium P/E multiple leaves short-term volatility vulnerable to software spending cycles.</div>
+        </div>
+
+        <!-- Stock 3 -->
+        <div class="stock-card" data-name="Constellation Energy CEG">
+            <div class="stock-header">
+                <span class="stock-ticker">Constellation Energy (NASDAQ: CEG)</span>
+                <span class="signal-badge signal-in">STRONG IN</span>
+            </div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$271.37</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$255.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">88/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +15%, P/E 23.8, Quick 1.65)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Macro Agent highlights structural baseload nuclear power demand for hyperscale AI compute clusters.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Nuclear plant operational restarts and regulatory review timelines.</div>
+        </div>
+
+        <!-- Stock 4 -->
+        <div class="stock-card" data-name="Micron Technology MU">
+            <div class="stock-header">
+                <span class="stock-ticker">Micron Technology (NASDAQ: MU)</span>
+                <span class="signal-badge signal-in">BREAKOUT IN</span>
+            </div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$124.80</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$112.00</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">92/100</span></div>
+            </div>
+            <div class="fund-badge">✅ 5/5 Fundamental Pass (Rev +93%, PEG 0.45, ROE 16.8%)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> High-bandwidth memory (HBM3e/HBM4) production capacity sold out through 2026.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Cyclical swings in memory chip supply/demand dynamics.</div>
+        </div>
+
+        <!-- Stock 5 -->
+        <div class="stock-card" data-name="Amprius Technologies AMPX">
+            <div class="stock-header">
+                <span class="stock-ticker">Amprius Technologies (NYSE: AMPX)</span>
+                <span class="signal-badge signal-in">GROWTH IN</span>
+            </div>
+            <div class="stock-metrics">
+                <div><span class="metric-label">Price</span><span class="metric-val">$7.71</span></div>
+                <div><span class="metric-label">Support</span><span class="metric-val">$7.25</span></div>
+                <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">80/100</span></div>
+            </div>
+            <div class="fund-badge" style="background:rgba(239,68,68,0.15); color:#f87171;">⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)</div>
+            <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> Silicon nanowire anode cells providing ultra-high energy density for aerospace and drone contracts.</div>
+            <div class="risk-box"><strong>⚠️ Key Risks:</strong> Capital dilution hazards and pre-profit scaling timelines.</div>
+        </div>
+    </div>
+
+    <script>
+        function filterStocks() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let cards = document.getElementsByClassName('stock-card');
+            for (let i = 0; i < cards.length; i++) {
+                let name = cards[i].getAttribute('data-name').toLowerCase();
+                if (name.includes(input)) {
+                    cards[i].style.display = "";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+
+        function downloadFile(e) {
+            e.preventDefault();
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
