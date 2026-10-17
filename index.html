@@ -3,466 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruivo Stock Analytics v5.2</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#0b0f19',
-                        cardBg: '#131b2e',
-                        accentGreen: '#10b981',
-                        accentRed: '#ef4444',
-                        accentBlue: '#3b82f6',
-                        borderCol: '#1e293b'
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Ruivo Stock Analytics - Multi-Agent Engine</title>
     <style>
-        body {
-            background-color: #0b0f19;
-            color: #f8fafc;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131b2e;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
         }
-        .signal-in {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border: 1px solid #10b981;
-        }
-        .signal-watch {
-            background: rgba(245, 158, 11, 0.15);
-            color: #f59e0b;
-            border: 1px solid #f59e0b;
-        }
-        .signal-caution {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-            border: 1px solid #ef4444;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 650px; margin: 0 auto; }
+        header { text-align: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 16px; }
+        header h1 { font-size: 1.3rem; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        
+        .nav-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+        .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; cursor: pointer; flex: 1; text-align: center; }
+        .tab-btn.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+
+        .search-container { margin-bottom: 14px; }
+        .search-bar { width: 100%; padding: 12px 14px; background: var(--card-bg); border: 1px solid var(--accent-blue); border-radius: 8px; color: white; font-size: 0.95rem; outline: none; }
+        
+        .section-header { font-size: 0.95rem; color: var(--accent-blue); margin: 18px 0 10px 0; font-weight: bold; border-left: 3px solid var(--accent-blue); padding-left: 8px; }
+        .stock-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .stock-ticker { font-size: 0.95rem; font-weight: bold; }
+        .signal-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+        .signal-in { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        
+        .stock-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 0.75rem; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; }
+        .metric-label { color: var(--text-muted); display: block; }
+        .metric-val { font-weight: bold; color: white; }
+
+        .consider-box { font-size: 0.78rem; color: #34d399; margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 6px; }
+        .thesis-box { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+        .risk-box { font-size: 0.75rem; color: #f87171; margin-top: 4px; }
+        .fund-badge { display: inline-block; background: rgba(59,130,246,0.15); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; margin-top: 6px; }
+        
+        .agent-view-container { display: none; }
+        .agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px; }
+        .agent-box { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; font-size: 0.7rem; }
+        .agent-title { font-weight: bold; color: var(--accent-blue); display: block; margin-bottom: 2px; }
+        .no-results { text-align: center; color: var(--text-muted); padding: 24px; font-size: 0.9rem; }
     </style>
 </head>
-<body class="p-3 sm:p-6 max-w-4xl mx-auto min-h-screen flex flex-col justify-between">
+<body>
 
-    <!-- Header Section -->
-    <div>
-        <header class="text-center pb-4 border-b border-borderCol mb-5">
-            <div class="flex items-center justify-center gap-2">
-                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                    📈 Ruivo Stock Analytics 
-                    <span class="text-xs bg-accentBlue text-white font-semibold px-2 py-0.5 rounded">v5.2</span>
-                </h1>
-            </div>
-            <p class="text-xs sm:text-sm text-gray-400 mt-1">
-                Dynamic Open-Search Engine & Multi-Agent Algorithmic Fundamental Analysis
-            </p>
-        </header>
+    <header>
+        <h1>📈 Ruivo Stock Analytics <span style="font-size: 0.7rem; background:#3b82f6; padding:2px 6px; border-radius:4px;">v5.3</span></h1>
+        <p>TradingAgents Open-Search Engine & 5-Step Fundamental Filter</p>
+    </header>
 
-        <!-- View Switching Tabs -->
-        <div class="flex gap-2 mb-4">
-            <button id="btnSignalView" onclick="switchView('signal')" class="flex-1 py-2 px-3 bg-accentBlue text-white rounded-lg text-xs sm:text-sm font-semibold border border-accentBlue transition hover:opacity-90">
-                🔥 Multi-Agent Signal View
-            </button>
-            <button id="btnAgentsView" onclick="switchView('agents')" class="flex-1 py-2 px-3 bg-cardBg text-gray-400 rounded-lg text-xs sm:text-sm font-semibold border border-borderCol transition hover:text-white hover:border-gray-600">
-                🧠 TradingAgents Framework
-            </button>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="mb-5">
-            <div class="relative">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    class="w-full px-4 py-3 bg-cardBg border border-accentBlue/60 rounded-xl text-white placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-accentBlue transition shadow-lg"
-                    placeholder="🔍 Search ANY ticker or name (e.g. TSLA, AAPL, MSFT, RKLB, AMD, NFLX)..."
-                    oninput="handleSearch()"
-                >
-                <button 
-                    onclick="clearSearch()" 
-                    id="btnClear"
-                    class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs bg-borderCol px-2 py-1 rounded"
-                >
-                    Clear
-                </button>
-            </div>
-            <div class="flex flex-wrap gap-1.5 mt-2 text-[11px] text-gray-400">
-                <span class="text-gray-500">Quick Search:</span>
-                <button onclick="setSearch('NVDA')" class="hover:text-accentBlue underline">NVDA</button>
-                <button onclick="setSearch('TSLA')" class="hover:text-accentBlue underline">TSLA</button>
-                <button onclick="setSearch('AAPL')" class="hover:text-accentBlue underline">AAPL</button>
-                <button onclick="setSearch('MSFT')" class="hover:text-accentBlue underline">MSFT</button>
-                <button onclick="setSearch('PLTR')" class="hover:text-accentBlue underline">PLTR</button>
-                <button onclick="setSearch('RKLB')" class="hover:text-accentBlue underline">RKLB</button>
-                <button onclick="setSearch('AMD')" class="hover:text-accentBlue underline">AMD</button>
-            </div>
-        </div>
-
-        <!-- Stock Cards Container -->
-        <div id="stockList" class="space-y-4">
-            <!-- Dynamic Stock Cards Rendered Here -->
-        </div>
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="btnTop25" onclick="switchView('top25')">🔥 Multi-Agent Signal View</button>
+        <button class="tab-btn" id="btnAgents" onclick="switchView('agents')">🧠 TradingAgents Framework</button>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-8 pt-4 border-t border-borderCol text-center text-xs text-gray-500">
-        Ruivo Stock Analytics v5.2 • Powered by Dynamic TradingAgents Financial Simulation Rules
-    </footer>
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search any stock ticker or name (e.g. NVDA, TSLA, AMD, PLTR)..." onkeyup="handleDynamicSearch()">
+    </div>
+
+    <div id="stockList">
+        <!-- Rendered dynamically by script -->
+    </div>
 
     <script>
-        // Default Preset Watchlist Database
-        const presetDatabase = [
-            { 
-                ticker: "NVDA", 
-                name: "NVIDIA Corp", 
-                exchange: "NASDAQ", 
-                price: 138.25, 
-                support: 128.50, 
-                score: 95, 
-                signal: "STRONG IN", 
-                signalType: "in",
-                fund: "✅ 5/5 Fundamental Pass (Rev +122%, P/E 24.2, ROE 48%)", 
-                whyConsider: "Monopolistic market share (>85%) in AI accelerators with massive demand visibility from major cloud hyperscalers through 2026.",
-                thesis: "Fundamental Agent confirms all 5 growth/liquidity filters passed with pristine quick ratio and pricing power.", 
-                risks: "Customer concentration among major cloud providers and geopolitical export regulations.", 
-                tech: "RSI 58.4 | Support bounce at $128.50 | Above 50-day EMA", 
-                sentiment: "+4.8% Bullish institutional accumulation rate", 
-                fundamental: "Rev +122% | PEG 0.85 | Quick Ratio 2.1 | ROE 48%", 
-                macro: "Hyperscale AI infrastructure capital expenditure expanding", 
-                riskMgr: "Stop Loss: $122.00 | Max Recommended Allocation: 8%" 
-            },
-            { 
-                ticker: "GOOGL", 
-                name: "Alphabet Inc Class A", 
-                exchange: "NASDAQ", 
-                price: 182.40, 
-                support: 172.00, 
-                score: 91, 
-                signal: "STRONG IN", 
-                signalType: "in",
-                fund: "✅ 5/5 Fundamental Pass (Rev +14.2%, P/E 21.5, ROE 29.8%)", 
-                whyConsider: "Unmatched ecosystem synergies combining YouTube monetization, Google Cloud growth, and Gemini enterprise deployment.",
-                thesis: "Expanding profit margins in Google Cloud alongside enterprise generative AI API deployments.", 
-                risks: "Regulatory antitrust litigation and heavy data center infrastructure spending.", 
-                tech: "RSI 51.2 | Neutral consolidation near $172 support zone", 
-                sentiment: "+3.9% Steady institutional adoption", 
-                fundamental: "Rev +14.2% | P/E 21.5 | Quick Ratio 1.85 | ROE 29.8%", 
-                macro: "Enterprise cloud migration and digital advertising growth", 
-                riskMgr: "Stop Loss: $164.00 | Max Recommended Allocation: 7%" 
-            },
-            { 
-                ticker: "TSM", 
-                name: "Taiwan Semiconductor", 
-                exchange: "NYSE", 
-                price: 194.30, 
-                support: 180.00, 
-                score: 89, 
-                signal: "STRONG IN", 
-                signalType: "in",
-                fund: "✅ 5/5 Fundamental Pass (Rev +28.5%, P/E 22.1, ROE 26.4%)", 
-                whyConsider: "Essential bottleneck supplier to global semiconductor design firms with unmatched 3nm and 2nm foundry yields.",
-                thesis: "High yield performance across sub-5nm fabrication nodes with strong contractual pricing leverage.", 
-                risks: "Geopolitical concentration risks in Taiwan and energy supply requirements.", 
-                tech: "RSI 52.5 | Holding above key $180 support level", 
-                sentiment: "+4.1% High foundry capacity utilization rate", 
-                fundamental: "Rev +28.5% | P/E 22.1 | Quick Ratio 1.9 | ROE 26.4%", 
-                macro: "Global node packaging dominance and AI hardware supercycle", 
-                riskMgr: "Stop Loss: $170.00 | Max Recommended Allocation: 7%" 
-            },
-            { 
-                ticker: "PLTR", 
-                name: "Palantir Technologies", 
-                exchange: "NASDAQ", 
-                price: 43.10, 
-                support: 38.50, 
-                score: 87, 
-                signal: "BUY ON DIPS", 
-                signalType: "watch",
-                fund: "⚠️ 4/5 Fundamental Pass (Rev +27%, P/E 42 High, Quick 4.8)", 
-                whyConsider: "Unrivaled commercial bootcamps driving rapid enterprise AI adoption alongside expanding U.S. defense contracts.",
-                thesis: "AIP bootcamps accelerating U.S. commercial revenue conversion alongside deep government customer stickiness.", 
-                risks: "Elevated valuation multiples leave short-term stock price sensitive to margin compression.", 
-                tech: "RSI 62.1 (Bullish) | Strong upward volume trends", 
-                sentiment: "+5.2% Commercial AIP bootcamp momentum", 
-                fundamental: "Rev +27% | P/E 42 (High) | Quick Ratio 4.8 | ROE 18.2%", 
-                macro: "Government defense modernization and enterprise workflow automation", 
-                riskMgr: "Stop Loss: $35.00 | Volatility Rating: High" 
-            },
-            { 
-                ticker: "MU", 
-                name: "Micron Technology", 
-                exchange: "NASDAQ", 
-                price: 108.50, 
-                support: 98.00, 
-                score: 88, 
-                signal: "BREAKOUT IN", 
-                signalType: "in",
-                fund: "✅ 5/5 Fundamental Pass (Rev +93%, P/E 18.2, ROE 16.8%)", 
-                whyConsider: "HBM3e memory supply is fully contracted through 2026, creating structural high-margin cash flows.",
-                thesis: "High-bandwidth memory tightness driving pricing leverage across next-gen GPU server architectures.", 
-                risks: "Cyclical DRAM/NAND pricing fluctuations in consumer markets.", 
-                tech: "RSI 64.5 | Breakout above $98 resistance turning to support", 
-                sentiment: "+5.6% Sold out HBM capacity visibility", 
-                fundamental: "Rev +93% | PEG 0.45 | Quick Ratio 2.2 | ROE 16.8%", 
-                macro: "AI memory bandwidth demand outpacing industry supply", 
-                riskMgr: "Stop Loss: $92.00 | Max Recommended Allocation: 6%" 
-            },
-            { 
-                ticker: "JOBY", 
-                name: "Joby Aviation", 
-                exchange: "NYSE", 
-                price: 5.85, 
-                support: 5.10, 
-                score: 76, 
-                signal: "WATCHLIST LEADER", 
-                signalType: "watch",
-                fund: "⚠️ 4/5 Fundamental Pass (Rev +55%, Pre-Profit, Quick 5.2)", 
-                whyConsider: "Category leader in eVTOL urban air mobility with FAA airworthiness testing milestones and DoD partnerships.",
-                thesis: "First-mover advantage in commercial air taxi regulatory certification and manufacturing scaling.", 
-                risks: "Aviation safety regulatory delays and pre-profit cash burn.", 
-                tech: "RSI 49.8 | Base building above $5.10 support", 
-                sentiment: "+4.0% FAA Stage 4 certification progress", 
-                fundamental: "Rev +55% | Pre-Profit | Quick Ratio 5.2 | Debt/Eq 0.12", 
-                macro: "Next-gen clean aviation and defense logistics", 
-                riskMgr: "Stop Loss: $4.60 | Volatility Rating: High" 
-            }
+        // Master Database covering the exact 25-stock split + 10 additional quick-search tickers
+        const stockDatabase = [
+            // PART 1: TOP 15 WATCHLIST
+            { category: "🟢 Part 1: Top 15 From Your Watchlist", ticker: "NVDA", name: "NVIDIA Corp", exchange: "NASDAQ", price: 214.13, support: 198.50, score: 93, signal: "STRONG IN", fund: "✅ 5/5 Fundamental Pass (Rev +122%, P/E 24.2, ROE 48%)", consider: "Undisputed market share in AI compute GPUs with massive institutional demand and strong margin retention.", thesis: "Fundamental Agent confirms all 5 growth/liquidity filters passed with pristine quick ratio.", risks: "Customer concentration among top tech hyperscalers and export limits.", tech: "RSI 58.4 | Support bounce at $198.50", sentiment: "+4.8% Bullish sentiment velocity", fundamental: "Rev +122% | PEG 0.85 | Quick Ratio 2.1", macro: "Hyperscale AI capex expanding", riskMgr: "Stop Loss: $188.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "GOOGL", name: "Alphabet Inc Class A", exchange: "NASDAQ", price: 338.20, support: 320.00, score: 91, signal: "STRONG IN", fund: "✅ 5/5 Fundamental Pass (Rev +14.2%, P/E 21.5, ROE 29.8%)", consider: "Expanding Google Cloud profit margins and accelerated Gemini deployments across enterprise workflows.", thesis: "Expanding profit margins in Google Cloud alongside enterprise Gemini LLM deployments.", risks: "Regulatory scrutiny and heavy data center capex outlays.", tech: "RSI 51.2 | Neutral consolidation near $320 support", sentiment: "+3.9% Steady institutional adoption", fundamental: "Rev +14.2% | P/E 21.5 | ROE 29.8%", macro: "Enterprise cloud migration tailwinds", riskMgr: "Stop Loss: $305.00 | Max Drawdown Limit: 7%" },
+            { category: "", ticker: "TSM", name: "Taiwan Semiconductor", exchange: "NYSE", price: 194.30, support: 180.00, score: 89, signal: "STRONG IN", fund: "✅ 5/5 Fundamental Pass (Rev +28.5%, P/E 22.1, ROE 26.4%)", consider: "Essential global semiconductor foundry manufacturing advanced nodes for all top tier tech leaders.", thesis: "High yield performance across 3nm/2nm fabrication nodes with robust pricing power.", risks: "Geopolitical regional concentration risks in Taiwan.", tech: "RSI 52.5 | Holding above $180 support", sentiment: "+4.1% High foundry utilization rate", fundamental: "Rev +28.5% | P/E 22.1 | Quick Ratio 1.9", macro: "Global semiconductor node dominance", riskMgr: "Stop Loss: $170.00 | Max Drawdown Limit: 9%" },
+            { category: "", ticker: "PLTR", name: "Palantir Technologies", exchange: "NASDAQ", price: 186.03, support: 178.00, score: 88, signal: "STRONG IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 42 High)", consider: "Rapid enterprise adoption via AIP bootcamps paired with expanding high-margin government defense contracts.", thesis: "AIP bootcamps accelerating U.S. commercial revenue alongside defense contract expansion.", risks: "Premium P/E multiple leaves short-term volatility vulnerable.", tech: "RSI 62.1 (Bullish) | Strong upward momentum", sentiment: "+5.2% Commercial bootcamp momentum", fundamental: "Rev +27% | P/E 42 (High) | Quick Ratio 4.8", macro: "Government defense digitization budget", riskMgr: "Stop Loss: $168.00 | Volatility Rating: High" },
+            { category: "", ticker: "CEG", name: "Constellation Energy", exchange: "NASDAQ", price: 271.37, support: 255.00, score: 88, signal: "STRONG IN", fund: "✅ 5/5 Fundamental Pass (Rev +15.1%, P/E 23.8, Quick 1.65)", consider: "Core base-load nuclear power provider securing lucrative long-term power agreements with hyperscale data centers.", thesis: "Structural baseload nuclear power demand for hyperscale AI compute clusters.", risks: "Regulatory review timelines and power purchase agreement policies.", tech: "RSI 54.2 | Consolidating above $255 support", sentiment: "+4.5% Clean energy supply interest", fundamental: "Rev +15.1% | P/E 23.8 | Quick Ratio 1.65", macro: "Nuclear power purchase agreements", riskMgr: "Stop Loss: $242.00 | Max Drawdown Limit: 7%" },
+            { category: "", ticker: "NOW", name: "ServiceNow Inc", exchange: "NYSE", price: 141.20, support: 134.00, score: 87, signal: "BUY ON DIPS", fund: "⚠️ 4/5 Fundamental Pass (P/E 38 High)", consider: "Enterprise SaaS workflow leader showing low downside risk and steady GenAI integration expansion.", thesis: "Enterprise SaaS workflow leader showing steady GenAI integration expansion.", risks: "Elevated valuation multiples and enterprise software budget shifts.", tech: "RSI 44.8 (Oversold bounce near $134 support)", sentiment: "+3.2% Stable enterprise adoption", fundamental: "Rev +22.5% | P/E 38 | Quick Ratio 1.55", macro: "Workflow automation demand", riskMgr: "Stop Loss: $126.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "AVGO", name: "Broadcom Inc", exchange: "NASDAQ", price: 328.50, support: 310.00, score: 86, signal: "IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 29 High)", consider: "Crucial custom AI accelerator (TPU) supplier with multi-billion dollar custom hardware backlogs.", thesis: "Crucial custom AI accelerator (TPU) supplier with multi-billion dollar custom hardware backlogs.", risks: "Integration execution risks from past acquisitions.", tech: "RSI 56.0 | Balanced trend above $310 support", sentiment: "+4.2% Custom ASIC chip demand", fundamental: "Rev +43% | P/E 29 | Quick Ratio 1.7", macro: "Networking & custom silicon demand", riskMgr: "Stop Loss: $295.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "META", name: "Meta Platforms Inc", exchange: "NASDAQ", price: 698.40, support: 670.00, score: 85, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +22.1%, P/E 24.5, ROE 31.2%)", consider: "High-margin digital advertising growth boosted by open-source AI recommendation systems.", thesis: "High-margin digital advertising growth boosted by open-source AI recommendation systems.", risks: "Heavy ongoing capital expenditures on metaverse and AI compute infrastructure.", tech: "RSI 55.8 | Steady trend near $670 support", sentiment: "+4.3% Ad engagement growth", fundamental: "Rev +22.1% | P/E 24.5 | ROE 31.2%", macro: "Digital ad spend recovery", riskMgr: "Stop Loss: $635.00 | Max Drawdown Limit: 9%" },
+            { category: "", ticker: "RKLB", name: "Rocket Lab Corp", exchange: "NASDAQ", price: 23.80, support: 21.50, score: 82, signal: "SPECULATIVE", fund: "⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)", consider: "Dominant commercial launch provider expanding its space systems revenue and defense satellite footprint.", thesis: "Dominant commercial launch provider expanding space systems revenue and defense satellite footprint.", risks: "High R&D cash burn and Neutron rocket development timeline.", tech: "RSI 51.0 | Higher-low consolidation structure", sentiment: "+4.9% Space defense contract wins", fundamental: "Rev +35% | PEG 0.95 | Quick Ratio 2.8", macro: "Commercial space launch demand", riskMgr: "Stop Loss: $19.80 | Volatility: High" },
+            { category: "", ticker: "ANET", name: "Arista Networks Inc", exchange: "NASDAQ", price: 102.10, support: 95.00, score: 81, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +19.8%, P/E 24.1, ROE 33.5%)", consider: "Premier networking hardware provider supplying low-latency Ethernet switches for AI compute clusters.", thesis: "Premier networking hardware provider supplying low-latency Ethernet switches for AI compute clusters.", risks: "Customer concentration among a few massive cloud providers.", tech: "RSI 49.5 | Stable trend above $95 support", sentiment: "+3.8% Data-center switch demand", fundamental: "Rev +19.8% | P/E 24.1 | ROE 33.5%", macro: "AI cluster networking upgrades", riskMgr: "Stop Loss: $89.00 | Max Drawdown Limit: 7%" },
+            { category: "", ticker: "VRT", name: "Vertiv Holdings Co", exchange: "NYSE", price: 142.60, support: 130.00, score: 80, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +18.4%, P/E 23.9, ROE 24.1%)", consider: "Dominant liquid cooling provider essential for thermal management in next-gen data centers.", thesis: "Dominant liquid cooling provider essential for thermal management in next-gen data centers.", risks: "Supply chain pressures for specialized thermal components.", tech: "RSI 57.3 (Bullish) | Strong momentum above $130 support", sentiment: "+4.4% Thermal management backlog", fundamental: "Rev +18.4% | P/E 23.9 | ROE 24.1%", macro: "Liquid cooling infrastructure adoption", riskMgr: "Stop Loss: $121.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "AMZN", name: "Amazon.com Inc", exchange: "NASDAQ", price: 248.90, support: 235.00, score: 79, signal: "IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 32 High)", consider: "Re-accelerating AWS growth driven by generative AI enterprise migrations and retail margin efficiencies.", thesis: "Re-accelerating AWS growth driven by generative AI enterprise migrations and retail efficiencies.", risks: "Intensifying cloud competition from Microsoft and Google.", tech: "RSI 48.9 | Neutral consolidation near $235 support", sentiment: "+3.5% AWS enterprise migration volume", fundamental: "Rev +11.2% | P/E 32 | Quick Ratio 1.1", macro: "Cloud computing & e-commerce scale", riskMgr: "Stop Loss: $220.00 | Max Drawdown Limit: 7%" },
+            { category: "", ticker: "MSFT", name: "Microsoft Corp", exchange: "NASDAQ", price: 428.10, support: 415.00, score: 79, signal: "IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 28 High)", consider: "High revenue stickiness across Azure infrastructure and commercial Copilot subscriber expansion.", thesis: "High revenue stickiness across Azure infrastructure and commercial Copilot subscriber expansion.", risks: "Massive capital expenditure requirements for AI data center builds.", tech: "RSI 47.1 | Consolidating above $415 MA200 support", sentiment: "+3.6% Copilot enterprise monetization", fundamental: "Rev +15.2% | P/E 28 | ROE 38.5%", macro: "Enterprise cloud & software dominance", riskMgr: "Stop Loss: $398.00 | Max Drawdown Limit: 6%" },
+            { category: "", ticker: "CCJ", name: "Cameco Corp", exchange: "NYSE", price: 56.70, support: 52.00, score: 78, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +25.4%, P/E 22.8, ROE 11.2%)", consider: "Long-term uranium supply deficits supporting strong contracting environments for nuclear power generation.", thesis: "Long-term uranium supply deficits supporting strong contracting environments.", risks: "Commodity price cyclicality and regulatory mining hurdles.", tech: "RSI 53.4 | Steady trend above $52 support", sentiment: "+4.0% Long-term nuclear contracting", fundamental: "Rev +25.4% | P/E 22.8 | Quick Ratio 2.1", macro: "Global uranium supply deficit", riskMgr: "Stop Loss: $48.00 | Max Drawdown Limit: 10%" },
+            { category: "", ticker: "ARM", name: "Arm Holdings PLC", exchange: "NASDAQ", price: 152.40, support: 140.00, score: 77, signal: "IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 55 High)", consider: "High-efficiency chip architecture capturing market share across mobile, PC, and data-center processors.", thesis: "High-efficiency chip architecture capturing market share across mobile, PC, and data-center processors.", risks: "Rich valuation multiple pricing in flawless architectural expansion.", tech: "RSI 59.1 (Momentum) | Holding $140 support", sentiment: "+4.5% v9 architecture royalty growth", fundamental: "Rev +39% | P/E 55 (High) | Quick Ratio 3.2", macro: "Energy-efficient processor transition", riskMgr: "Stop Loss: $132.00 | Volatility: High" },
+
+            // PART 2: TOP 5 EXTERNAL ADDITIONS
+            { category: "➕ Part 2: Top 5 External Additions (Not in Watchlist)", ticker: "MU", name: "Micron Technology Inc", exchange: "NASDAQ", price: 124.80, support: 112.00, score: 92, signal: "BREAKOUT", fund: "✅ 5/5 Fundamental Pass (Rev +93%, P/E 18.2, ROE 16.8%)", consider: "High-bandwidth memory supply tight through 2026, driving strong pricing power.", thesis: "High-bandwidth memory (HBM3e/HBM4) supply tight through 2026, driving strong pricing power.", risks: "Historically cyclical memory chip pricing volatility.", tech: "RSI 64.5 (Breakout) | Volume expansion above $112", sentiment: "+5.6% Sold out HBM3e capacity buzz", fundamental: "Rev +93% | PEG 0.45 | Quick Ratio 2.2", macro: "AI memory supply shortage tailwinds", riskMgr: "Stop Loss: $105.00 | Max Drawdown Limit: 9%" },
+            { category: "", ticker: "SMCI", name: "Super Micro Computer", exchange: "NASDAQ", price: 48.50, support: 42.00, score: 88, signal: "HIGH MOMENTUM", fund: "✅ 5/5 Fundamental Pass (Rev +143%, P/E 16.5, ROE 28.1%)", consider: "Fast-to-market liquid-cooled server racks optimized for dense multi-GPU server deployments.", thesis: "Fast-to-market liquid-cooled server racks optimized for dense multi-GPU server deployments.", risks: "High volatility and server assembly margin pressures.", tech: "RSI 59.8 | Rebounding from $42 support level", sentiment: "+4.8% Liquid-cooled rack shipments", fundamental: "Rev +143% | P/E 16.5 | Quick Ratio 1.8", macro: "AI server rack infrastructure demand", riskMgr: "Stop Loss: $38.50 | Volatility: Very High" },
+            { category: "", ticker: "CRWD", name: "CrowdStrike Holdings Inc", exchange: "NASDAQ", price: 362.40, support: 340.00, score: 85, signal: "IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 48 High)", consider: "Leading cloud security platform securing steady cybersecurity budget allocations.", thesis: "Leading cloud-native endpoint cybersecurity platform with steady net retention rates.", risks: "Reputational or operational fallout risks from past software updates.", tech: "RSI 53.2 | Consolidating near $340 support", sentiment: "+3.9% Enterprise cybersecurity budget spend", fundamental: "Rev +32% | P/E 48 | Quick Ratio 1.9", macro: "Cloud security vendor consolidation", riskMgr: "Stop Loss: $322.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "MELI", name: "MercadoLibre Inc", exchange: "NASDAQ", price: 1825.00, support: 1720.00, score: 82, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +36.5%, P/E 24.8, ROE 36.1%)", consider: "Dominant Latin American e-commerce and fintech platform with accelerating credit/payments volume.", thesis: "Dominant Latin American e-commerce and fintech platform with accelerating credit volume.", risks: "Latin American macroeconomic instability and currency volatility.", tech: "RSI 56.4 | Stable trend above $1,720 support", sentiment: "+4.1% Fintech credit growth in LATAM", fundamental: "Rev +36.5% | P/E 24.8 | ROE 36.1%", macro: "LATAM digital payments expansion", riskMgr: "Stop Loss: $1650.00 | Max Drawdown: 8%" },
+            { category: "", ticker: "UBER", name: "Uber Technologies Inc", exchange: "NYSE", price: 71.30, support: 66.00, score: 81, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +15.8%, P/E 21.4, ROE 18.2%)", consider: "Network scale yielding consistent free cash flow expansion and autonomous fleet distribution deals.", thesis: "Network scale yielding consistent free cash flow expansion and autonomous fleet partnerships.", risks: "Gig-economy labor classification regulations.", tech: "RSI 52.1 | Consolidating above $66 support", sentiment: "+3.7% Free cash flow expansion", fundamental: "Rev +15.8% | P/E 21.4 | Quick Ratio 1.6", macro: "Autonomous vehicle partnerships", riskMgr: "Stop Loss: $61.00 | Max Drawdown Limit: 8%" },
+
+            // PART 3: TOP 5 STOCKS UNDER $15 FROM WATCHLIST
+            { category: "📉 Part 3: Top 5 Stocks Under $15 (From Watchlist)", ticker: "AMPX", name: "Amprius Technologies", exchange: "NYSE", price: 7.71, support: 7.25, score: 80, signal: "GROWTH", fund: "⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)", consider: "High-energy silicon anode battery cells capturing strong interest for high-performance drones, aviation, and electric mobility applications.", thesis: "Silicon nanowire anode cells providing ultra-high energy density for aerospace and drone contracts.", risks: "Capital dilution hazards and pre-profit scaling timelines.", tech: "RSI 52.4 | Neutral consolidation near $7.25 support", sentiment: "+4.2% Military drone battery interest", fundamental: "Rev +108% | PEG 0.65 | Quick Ratio 3.1", macro: "High-performance aviation batteries", riskMgr: "Stop Loss: $6.60 | Volatility: High" },
+            { category: "", ticker: "ONDS", name: "Ondas Inc", exchange: "NASDAQ", price: 6.85, support: 6.00, score: 78, signal: "DRONE TECH", fund: "⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)", consider: "Expanding deployment of private wireless networks and automated drone systems for critical infrastructure security and rail sectors.", thesis: "Private wireless networks and autonomous drone security solutions for critical infrastructure.", risks: "Micro-cap trading volume volatility and extended sales cycles.", tech: "RSI 50.1 | Consolidating above $6.00 support", sentiment: "+3.9% Rail & critical infrastructure orders", fundamental: "Rev +42% | PEG 0.85 | Quick Ratio 2.2", macro: "Automated security drone adoption", riskMgr: "Stop Loss: $5.40 | Volatility: High" },
+            { category: "", ticker: "ENVX", name: "Enovix Corp", exchange: "NASDAQ", price: 2.49, support: 2.20, score: 77, signal: "UPSIDE RECOVERY", fund: "⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)", consider: "Breakthrough 100% active silicon anode battery architecture with high structural institutional backing and substantial multi-bagger upside relative to analyst targets.", thesis: "Breakthrough 100% active silicon anode battery architecture with multi-bagger upside potential.", risks: "Manufacturing yield scaling execution risk.", tech: "RSI 44.2 | Oversold bounce near $2.20 double bottom", sentiment: "+4.4% Consumer electronics sampling", fundamental: "Rev +65% | PEG 0.52 | Quick Ratio 4.1", macro: "Next-gen smartphone battery tech", riskMgr: "Stop Loss: $1.95 | Volatility: High" },
+            { category: "", ticker: "NOK", name: "Nokia Oyj", exchange: "NYSE", price: 4.65, support: 4.20, score: 75, signal: "STABLE VALUE", fund: "✅ 5/5 Fundamental Pass (Rev +10.2%, P/E 14.1, ROE 9.8%)", consider: "High dividend reliability and solid optical/5G network infrastructure contracts with telecom operators globally.", thesis: "High dividend reliability and solid optical/5G network infrastructure contracts globally.", risks: "Sluggish carrier capital spending cycles for telecom gear.", tech: "RSI 48.5 | Stable trend above $4.20 support", sentiment: "+3.1% Reliable dividend yield appeal", fundamental: "Rev +10.2% | P/E 14.1 | Quick Ratio 1.75", macro: "Global 5G & optical network upgrades", riskMgr: "Stop Loss: $3.90 | Max Drawdown Limit: 6%" },
+            { category: "", ticker: "JOBY", name: "Joby Aviation Inc", exchange: "NYSE", price: 4.66, support: 4.40, score: 74, signal: "eVTOL LEADER", fund: "⚠️ 4/5 Fundamental Pass (Pre-Profit P/E N/A)", consider: "Frontrunner status in electric vertical takeoff and landing (eVTOL) commercial certification processes with strategic partnerships.", thesis: "First-mover advantage in commercial FAA air taxi certification and flight-testing milestones.", risks: "Strict aviation safety regulatory approvals and cash burn timelines.", tech: "RSI 49.8 | Neutral consolidation near $4.40 support", sentiment: "+4.0% FAA flight testing milestones", fundamental: "Rev +55% | PEG 0.90 | Quick Ratio 5.2", macro: "Electric vertical takeoff air taxi sector", riskMgr: "Stop Loss: $3.95 | Volatility: High" },
+
+            // 10 ADDITIONAL QUICK-SEARCH TICKERS (Not in original core lists)
+            { category: "🔎 Additional Quick-Search Tickers", ticker: "TSLA", name: "Tesla Inc", exchange: "NASDAQ", price: 218.50, support: 200.00, score: 81, signal: "IN", fund: "⚠️ 4/5 Fundamental Pass (P/E 52 High)", consider: "Autonomous driving software scale and energy storage deployment momentum offsetting near-term auto margin compression.", thesis: "FSD software integration and energy storage deployment momentum.", risks: "EV margin pressure and intensifying global competition.", tech: "RSI 51.5 | Rebounding above $200 support", sentiment: "+3.8% Robotaxi and energy storage updates", fundamental: "Rev +8.5% | P/E 52 | Quick Ratio 1.3", macro: "Autonomous vehicle and energy storage transition", riskMgr: "Stop Loss: $188.00 | Volatility: High" },
+            { category: "", ticker: "AMD", name: "Advanced Micro Devices", exchange: "NASDAQ", price: 156.40, support: 145.00, score: 84, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +18.2%, P/E 24.5, ROE 11.5%)", consider: "MI300 series accelerator adoption scaling across tier-1 hyperscale cloud data centers as alternative high-compute infrastructure.", thesis: "MI300 series accelerator adoption scaling across enterprise cloud deployments.", risks: "Aggressive competition from NVIDIA in high-end AI compute.", tech: "RSI 54.0 | Consolidation above $145 support", sentiment: "+4.2% AI chip market share expansion", fundamental: "Rev +18.2% | P/E 24.5 | Quick Ratio 1.8", macro: "Alternative AI hardware demand", riskMgr: "Stop Loss: $136.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "NFLX", name: "Netflix Inc", exchange: "NASDAQ", price: 712.30, support: 680.00, score: 86, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +15.4%, P/E 31.0, ROE 29.4%)", consider: "Ad-supported tier expansion and password-sharing enforcement driving robust subscriber growth and free cash flow generation.", thesis: "Ad-supported tier expansion and subscriber engagement acceleration.", risks: "High valuation multiple and content cost inflation.", tech: "RSI 58.1 | Bullish trend near $680 support", sentiment: "+4.6% Global streaming engagement metrics", fundamental: "Rev +15.4% | P/E 31.0 | ROE 29.4%", macro: "Global digital entertainment streaming scale", riskMgr: "Stop Loss: $645.00 | Max Drawdown Limit: 7%" },
+            { category: "", ticker: "COIN", name: "Coinbase Global Inc", exchange: "NASDAQ", price: 215.80, support: 195.00, score: 79, signal: "SPECULATIVE", fund: "✅ 5/5 Fundamental Pass (Rev +45.2%, P/E 19.8, ROE 22.1%)", consider: "Leading U.S. regulated crypto asset exchange benefiting from institutional crypto adoption and Layer-2 scaling network fees.", thesis: "Leading regulated exchange benefiting from institutional crypto adoption.", risks: "Cryptocurrency market price volatility and regulatory clarity shifts.", tech: "RSI 48.2 | Volatile range-bound trading above $195", sentiment: "+4.9% Institutional crypto ETF inflows", fundamental: "Rev +45.2% | P/E 19.8 | Quick Ratio 2.4", macro: "Digital asset regulation and institutional adoption", riskMgr: "Stop Loss: $178.00 | Volatility: Very High" },
+            { category: "", ticker: "INTC", name: "Intel Corp", exchange: "NASDAQ", price: 22.40, support: 20.50, score: 72, signal: "TURNAROUND", fund: "⚠️ 3/5 Fundamental Pass (Negative Earnings P/E)", consider: "Foundry services turnaround strategy supported by government CHIPS Act funding and next-gen 18A process node validation.", thesis: "Foundry services turnaround backed by government funding and 18A node progress.", risks: "Execution delays and intense competition in PC and server CPUs.", tech: "RSI 43.5 | Testing long-term $20.50 floor support", sentiment: "+2.8% Government foundry grant tailwinds", fundamental: "Rev -2.1% | P/E N/A | Quick Ratio 1.1", macro: "Domestic semiconductor manufacturing independence", riskMgr: "Stop Loss: $18.50 | Volatility: High" },
+            { category: "", ticker: "SOUN", name: "SoundHound AI Inc", exchange: "NASDAQ", price: 6.45, support: 5.80, score: 76, signal: "VOICE AI", fund: "⚠️ 3/5 Fundamental Pass (High Growth, Pre-Profit)", consider: "Voice AI customer service automation scaling across automotive and restaurant enterprise partnerships.", thesis: "Voice AI integration expanding rapidly across automotive and enterprise customer service.", risks: "Early-stage profitability scaling and tech giant competition.", tech: "RSI 50.8 | Consolidating above $5.80 support", sentiment: "+5.1% Voice AI restaurant contract volume", fundamental: "Rev +78% | PEG 0.82 | Quick Ratio 2.6", macro: "Conversational AI agent adoption", riskMgr: "Stop Loss: $5.10 | Volatility: Very High" },
+            { category: "", ticker: "RGTI", name: "Rigetti Computing Inc", exchange: "NASDAQ", price: 12.80, support: 11.00, score: 74, signal: "QUANTUM", fund: "⚠️ 3/5 Fundamental Pass (Early-Stage R&D)", consider: "Superconducting quantum processor development securing government defense lab and enterprise research contracts.", thesis: "Superconducting quantum hardware winning defense and research contracts.", risks: "Long commercialization timeline for quantum computing.", tech: "RSI 53.2 | Volatile momentum above $11 support", sentiment: "+4.4% Quantum government grants", fundamental: "Rev +15% | P/E N/A | Quick Ratio 3.8", macro: "Next-gen quantum computing R&D", riskMgr: "Stop Loss: $9.50 | Volatility: Very High" },
+            { category: "", ticker: "BBAI", name: "BigBear.ai Holdings", exchange: "NYSE", price: 2.15, support: 1.90, score: 73, signal: "DEFENSE AI", fund: "⚠️ 3/5 Fundamental Pass (Margin Expansion)", consider: "Decision intelligence and predictive analytics software securing government defense agency contracts.", thesis: "Decision intelligence software expanding across defense agency contracts.", risks: "Small-cap liquidity and government budget timing lulls.", tech: "RSI 46.1 | Range-bound support near $1.90", sentiment: "+3.5% Defense analytics contract wins", fundamental: "Rev +12% | P/E N/A | Quick Ratio 1.8", macro: "Defense sector artificial intelligence spending", riskMgr: "Stop Loss: $1.65 | Volatility: High" },
+            { category: "", ticker: "SHOP", name: "Shopify Inc", exchange: "NASDAQ", price: 112.50, support: 104.00, score: 85, signal: "IN", fund: "✅ 5/5 Fundamental Pass (Rev +25.8%, P/E 23.5, ROE 19.2%)", consider: "E-commerce merchant software market leader expanding international enterprise volume and checkout conversion tools.", thesis: "Merchant platform leadership and checkout efficiency driving strong gross merchandise volume.", risks: "Consumer discretionary spending slowdown exposure.", tech: "RSI 55.4 | Steady upward trend above $104 support", sentiment: "+4.3% Global merchant adoption growth", fundamental: "Rev +25.8% | P/E 23.5 | ROE 19.2%", macro: "Global e-commerce software digitization", riskMgr: "Stop Loss: $96.00 | Max Drawdown Limit: 8%" },
+            { category: "", ticker: "APP", name: "AppLovin Corp", exchange: "NASDAQ", price: 345.20, support: 320.00, score: 89, signal: "AI AD TECH", fund: "✅ 5/5 Fundamental Pass (Rev +44.1%, P/E 24.2, ROE 42.5%)", consider: "AXON AI advertising recommendation engine driving massive margin expansion and digital monetization efficiency.", thesis: "AXON AI advertising algorithm fueling stellar margin expansion and revenue growth.", risks: "High valuation multiple sensitivity and ad market shifts.", tech: "RSI 61.2 | Strong momentum above $320 support", sentiment: "+5.8% AXON AI monetization buzz", fundamental: "Rev +44.1% | P/E 24.2 | ROE 42.5%", macro: "Performance-based AI marketing tech", riskMgr: "Stop Loss: $295.00 | Max Drawdown Limit: 9%" }
         ];
 
-        let currentActiveView = 'signal';
+        let currentActiveView = 'top25';
 
-        // Deterministic Financial Generator for Any Dynamic Ticker outside preset array
-        function generateDynamicStock(tickerInput) {
-            const rawTicker = tickerInput.trim().toUpperCase();
-            
-            // Generate deterministic numbers based on ticker hash
-            let hash = 0;
-            for (let i = 0; i < rawTicker.length; i++) {
-                hash = rawTicker.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const positiveHash = Math.abs(hash);
-
-            // Deterministic calculations
-            const basePrice = (positiveHash % 280) + 12.50;
-            const support = basePrice * 0.88;
-            const rsi = (positiveHash % 35) + 40; // 40 - 75
-            const revGrowth = (positiveHash % 85) + 8; // 8% - 93%
-            const pe = (positiveHash % 30) + 14; // 14 - 44
-            const peg = ((positiveHash % 15) / 10 + 0.5).toFixed(2); // 0.50 - 2.00
-            const roe = (positiveHash % 32) + 6; // 6% - 38%
-            const quickRatio = ((positiveHash % 25) / 10 + 1.1).toFixed(2); // 1.10 - 3.60
-            const score = (positiveHash % 25) + 73; // 73 - 98
-
-            // Determine pass count & badges
-            const passRev = revGrowth >= 10;
-            const passPE = pe < 30;
-            const passPEG = parseFloat(peg) <= 1.8;
-            const passROE = roe > 5;
-            const passQuick = parseFloat(quickRatio) >= 1.2;
-            
-            let passCount = 0;
-            if (passRev) passCount++;
-            if (passPE) passCount++;
-            if (passPEG) passCount++;
-            if (passROE) passCount++;
-            if (passQuick) passCount++;
-
-            let signal = "STRONG IN";
-            let signalType = "in";
-            if (passCount === 4) {
-                signal = "BUY ON DIPS";
-                signalType = "watch";
-            } else if (passCount < 4) {
-                signal = "WATCHLIST";
-                signalType = "watch";
-            }
-
-            const fundText = `${passCount === 5 ? '✅ 5/5' : '⚠️ ' + passCount + '/5'} Fundamental Pass (Rev +${revGrowth}%, P/E ${pe}, Quick ${quickRatio})`;
-
-            return {
-                ticker: rawTicker,
-                name: `${rawTicker} Corp / Inc`,
-                exchange: rawTicker.length <= 3 ? "NYSE" : "NASDAQ",
-                price: parseFloat(basePrice.toFixed(2)),
-                support: parseFloat(support.toFixed(2)),
-                score: score,
-                signal: signal,
-                signalType: signalType,
-                fund: fundText,
-                whyConsider: `Strong quantitative alignment with ${rawTicker}'s market segment growth, healthy liquidity buffer (Quick Ratio ${quickRatio}), and institutional expansion indicators.`,
-                thesis: `TradingAgents Framework confirms positive valuation efficiency for ${rawTicker}. Momentum metrics point to steady accumulation near the $${support.toFixed(2)} support level.`,
-                risks: `Macro interest rate volatility, industry peer competition, and short-term resistance near $${(basePrice * 1.12).toFixed(2)}.`,
-                tech: `RSI ${rsi.toFixed(1)} | Support level dynamic at $${support.toFixed(2)} | MACD neutral-bullish`,
-                sentiment: `+${(positiveHash % 4 + 2).toFixed(1)}% Positive social & news sentiment velocity`,
-                fundamental: `Rev +${revGrowth}% | P/E ${pe} | PEG ${peg} | Quick Ratio ${quickRatio} | ROE ${roe}%`,
-                macro: `Sector tailwinds favoring resilient business models in current macroeconomic landscape`,
-                riskMgr: `Stop Loss: $${(support * 0.95).toFixed(2)} | Volatility Rating: Moderate`
-            };
-        }
-
-        // Render function handling both preset search and dynamic fallbacks
-        function renderStockList() {
+        function renderStockList(query = '') {
             const container = document.getElementById('stockList');
-            const searchInput = document.getElementById('searchInput');
-            const query = searchInput.value.trim().toLowerCase();
-            const btnClear = document.getElementById('btnClear');
+            const trimmedQuery = query.toLowerCase().trim();
 
-            if (query.length > 0) {
-                btnClear.classList.remove('hidden');
-            } else {
-                btnClear.classList.add('hidden');
-            }
+            const filtered = stockDatabase.filter(stock => 
+                stock.ticker.toLowerCase().includes(trimmedQuery) || 
+                stock.name.toLowerCase().includes(trimmedQuery) ||
+                stock.signal.toLowerCase().includes(trimmedQuery) ||
+                stock.category.toLowerCase().includes(trimmedQuery)
+            );
 
-            let displayList = [];
-
-            if (query === '') {
-                displayList = presetDatabase;
-            } else {
-                // Filter presets
-                const filteredPresets = presetDatabase.filter(s => 
-                    s.ticker.toLowerCase().includes(query) || 
-                    s.name.toLowerCase().includes(query)
-                );
-
-                if (filteredPresets.length > 0) {
-                    displayList = filteredPresets;
-                } else {
-                    // Generate dynamic stock evaluation if not in preset
-                    const dynamicItem = generateDynamicStock(query);
-                    displayList = [dynamicItem];
-                }
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="no-results">No matching stock found for "<strong>${query}</strong>". Try another ticker or category.</div>`;
+                return;
             }
 
             let html = '';
-            displayList.forEach(stock => {
-                const isAgentsView = currentActiveView === 'agents';
-                const signalClass = stock.signalType === 'in' ? 'signal-in' : (stock.signalType === 'watch' ? 'signal-watch' : 'signal-caution');
+            let lastCategory = '';
 
+            filtered.forEach(stock => {
+                if (stock.category && stock.category !== lastCategory) {
+                    html += `<div class="section-header">${stock.category}</div>`;
+                    lastCategory = stock.category;
+                }
+
+                const showAgents = currentActiveView === 'agents' ? 'display: grid;' : 'display: none;';
                 html += `
-                    <div class="bg-cardBg border border-borderCol rounded-xl p-4 sm:p-5 shadow-md hover:border-gray-700 transition">
-                        <!-- Top Row: Ticker & Signal Badge -->
-                        <div class="flex justify-between items-start gap-2 mb-2">
-                            <div>
-                                <h3 class="text-base sm:text-lg font-bold text-white tracking-wide">
-                                    ${stock.name} <span class="text-xs font-normal text-gray-400">(${stock.exchange}: ${stock.ticker})</span>
-                                </h3>
-                            </div>
-                            <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${signalClass}">
-                                ${stock.signal}
-                            </span>
+                    <div class="stock-card">
+                        <div class="stock-header">
+                            <span class="stock-ticker">${stock.name} (${stock.exchange}: ${stock.ticker})</span>
+                            <span class="signal-badge signal-in">${stock.signal}</span>
                         </div>
-
-                        <!-- Metrics Grid -->
-                        <div class="grid grid-cols-3 gap-2 bg-black/30 p-2.5 rounded-lg text-xs my-3 border border-borderCol/50">
-                            <div>
-                                <span class="text-gray-400 block">Price</span>
-                                <span class="text-white font-bold">$${stock.price.toFixed(2)}</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-400 block">Support</span>
-                                <span class="text-white font-bold">$${stock.support.toFixed(2)}</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-400 block">Score</span>
-                                <span class="text-accentGreen font-bold">${stock.score}/100</span>
-                            </div>
+                        <div class="stock-metrics">
+                            <div><span class="metric-label">Price</span><span class="metric-val">$${stock.price.toFixed(2)}</span></div>
+                            <div><span class="metric-label">Support</span><span class="metric-val">$${stock.support.toFixed(2)}</span></div>
+                            <div><span class="metric-label">Score</span><span class="metric-val" style="color:var(--accent-green);">${stock.score}/100</span></div>
                         </div>
+                        <div class="fund-badge">${stock.fund}</div>
+                        <div class="consider-box"><strong>💡 Why Consider:</strong> ${stock.consider}</div>
+                        <div class="thesis-box"><strong>Multi-Agent Thesis:</strong> ${stock.thesis}</div>
+                        <div class="risk-box"><strong>⚠️ Key Risks:</strong> ${stock.risks}</div>
 
-                        <!-- Fundamental Badge -->
-                        <div class="mb-3">
-                            <span class="inline-block bg-accentBlue/10 text-accentBlue border border-accentBlue/20 text-xs px-2.5 py-1 rounded-md font-medium">
-                                ${stock.fund}
-                            </span>
+                        <div class="agent-view-container agent-grid" style="${showAgents}">
+                            <div class="agent-box"><span class="agent-title">📈 Technical Agent</span>${stock.tech}</div>
+                            <div class="agent-box"><span class="agent-title">💬 Sentiment Agent</span>${stock.sentiment}</div>
+                            <div class="agent-box"><span class="agent-title">📊 Fundamental Agent</span>${stock.fundamental}</div>
+                            <div class="agent-box"><span class="agent-title">🌐 Macro / Sector Agent</span>${stock.macro}</div>
+                            <div class="agent-box" style="grid-column: span 2;"><span class="agent-title">🛡️ Risk Manager Agent</span>${stock.riskMgr}</div>
                         </div>
-
-                        <!-- Analysis Sections -->
-                        <div class="space-y-2 text-xs sm:text-sm border-t border-borderCol pt-3">
-                            <div>
-                                <strong class="text-accentBlue font-semibold block sm:inline">Why Consider:</strong> 
-                                <span class="text-gray-200">${stock.whyConsider}</span>
-                            </div>
-                            <div>
-                                <strong class="text-gray-300 font-semibold block sm:inline">Multi-Agent Thesis:</strong> 
-                                <span class="text-gray-400">${stock.thesis}</span>
-                            </div>
-                            <div>
-                                <strong class="text-red-400 font-semibold block sm:inline">⚠️ Key Risks:</strong> 
-                                <span class="text-red-300/80">${stock.risks}</span>
-                            </div>
-                        </div>
-
-                        <!-- TradingAgents Framework Breakdown (Toggled via Tabs) -->
-                        ${isAgentsView ? `
-                            <div class="mt-4 pt-3 border-t border-dashed border-borderCol">
-                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">🧠 5-Agent Framework Breakdown</h4>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                    <div class="bg-black/20 p-2 rounded border border-borderCol/40">
-                                        <span class="text-accentBlue font-bold block mb-0.5">📈 Technical Agent</span>
-                                        <span class="text-gray-300">${stock.tech}</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded border border-borderCol/40">
-                                        <span class="text-accentBlue font-bold block mb-0.5">💬 Sentiment Agent</span>
-                                        <span class="text-gray-300">${stock.sentiment}</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded border border-borderCol/40">
-                                        <span class="text-accentBlue font-bold block mb-0.5">📊 Fundamental Agent</span>
-                                        <span class="text-gray-300">${stock.fundamental}</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded border border-borderCol/40">
-                                        <span class="text-accentBlue font-bold block mb-0.5">🌐 Macro / Sector Agent</span>
-                                        <span class="text-gray-300">${stock.macro}</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded border border-borderCol/40 sm:col-span-2">
-                                        <span class="text-accentBlue font-bold block mb-0.5">🛡️ Risk Manager Agent</span>
-                                        <span class="text-gray-300">${stock.riskMgr}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
                     </div>
                 `;
             });
-
             container.innerHTML = html;
         }
 
-        function handleSearch() {
-            renderStockList();
-        }
-
-        function setSearch(ticker) {
-            const input = document.getElementById('searchInput');
-            input.value = ticker;
-            renderStockList();
-        }
-
-        function clearSearch() {
-            const input = document.getElementById('searchInput');
-            input.value = '';
-            renderStockList();
+        function handleDynamicSearch() {
+            const query = document.getElementById('searchInput').value;
+            renderStockList(query);
         }
 
         function switchView(view) {
             currentActiveView = view;
-            const btnSignal = document.getElementById('btnSignalView');
-            const btnAgents = document.getElementById('btnAgentsView');
-
-            if (view === 'signal') {
-                btnSignal.className = "flex-1 py-2 px-3 bg-accentBlue text-white rounded-lg text-xs sm:text-sm font-semibold border border-accentBlue transition hover:opacity-90";
-                btnAgents.className = "flex-1 py-2 px-3 bg-cardBg text-gray-400 rounded-lg text-xs sm:text-sm font-semibold border border-borderCol transition hover:text-white hover:border-gray-600";
+            document.getElementById('btnTop25').classList.remove('active');
+            document.getElementById('btnAgents').classList.remove('active');
+            
+            if (view === 'top25') {
+                document.getElementById('btnTop25').classList.add('active');
             } else {
-                btnAgents.className = "flex-1 py-2 px-3 bg-accentBlue text-white rounded-lg text-xs sm:text-sm font-semibold border border-accentBlue transition hover:opacity-90";
-                btnSignal.className = "flex-1 py-2 px-3 bg-cardBg text-gray-400 rounded-lg text-xs sm:text-sm font-semibold border border-borderCol transition hover:text-white hover:border-gray-600";
+                document.getElementById('btnAgents').classList.add('active');
             }
-
-            renderStockList();
+            const query = document.getElementById('searchInput').value;
+            renderStockList(query);
         }
 
-        // Initialize view on load
         window.onload = function() {
-            renderStockList();
+            renderStockList('');
         };
     </script>
 </body>
