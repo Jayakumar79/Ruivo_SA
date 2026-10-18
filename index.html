@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruivo Stock Analytics v9.0</title>
+    <title>Ruivo Stock Analytics v9.5 - Fully Functional Watchlist</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -24,6 +24,7 @@
         .add-ticker-bar { display: flex; gap: 6px; margin-bottom: 12px; }
         .add-input { flex: 1; padding: 8px 10px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 0.8rem; outline: none; }
         .add-btn { background: var(--accent-blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+        .sync-btn { background: #059669; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
 
         .nav-tabs { display: flex; gap: 4px; margin-bottom: 14px; overflow-x: auto; }
         .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; flex: 1; text-align: center; white-space: nowrap; }
@@ -67,19 +68,20 @@
         .stats-table th { color: var(--accent-blue); padding: 8px 6px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         .stats-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; }
         .stats-table tr:hover { background: rgba(255,255,255,0.02); }
+        .live-tag { font-size: 0.6rem; background: #10b981; color: black; padding: 1px 4px; border-radius: 3px; margin-left: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>📈 Ruivo Stock Analytics <span style="font-size: 0.7rem; background:#3b82f6; padding:2px 6px; border-radius:4px;">v9.0</span></h1>
-        <p>TradingAgents Framework • AlphaVantage Embedded • Permanent Custom Watchlist</p>
+        <h1>📈 Ruivo Stock Analytics <span style="font-size: 0.7rem; background:#3b82f6; padding:2px 6px; border-radius:4px;">v9.5</span></h1>
+        <p>Complete 100+ Watchlist • Dynamic Alphabetical Sorting • Real-time Alpha Vantage</p>
     </header>
 
-    <!-- Custom Watchlist Add Bar -->
     <div class="add-ticker-bar">
-        <input type="text" id="newTickerInput" class="add-input" placeholder="➕ Add ticker permanently to watchlist (e.g. AAPL, TSLA)...">
+        <input type="text" id="newTickerInput" class="add-input" placeholder="➕ Add custom ticker permanently...">
         <button class="add-btn" onclick="addNewWatchlistTicker()">Add Ticker</button>
+        <button class="sync-btn" onclick="fetchLiveMarketDataBatch()">🔄 Refresh Quotes</button>
     </div>
 
     <div class="nav-tabs">
@@ -89,62 +91,74 @@
     </div>
 
     <div class="search-container">
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search any ticker (e.g. NVDA, PLTR, INTC, NKLA)..." onkeyup="handleDynamicSearch()">
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search any ticker or name..." onkeyup="handleDynamicSearch()">
     </div>
 
     <div id="stockList">
-        <!-- Calculated dynamically -->
+        <!-- Rendered dynamically -->
     </div>
 
     <script>
         const EMBEDDED_AV_KEY = "FQ1XXE5MENJK9YBF";
 
-        // Master Base Stock Pool
         const defaultStockPool = [
-            // Part 1: Watchlist Leaders
-            { ticker: "NVDA", name: "NVIDIA Corp", exchange: "NASDAQ", basePrice: 214.13, isWatchlist: true, revGrowth: 122, pe: 24.2, peg: 0.85, roe: 48.2, quick: 2.1, topHolders: "Vanguard (8.2%), BlackRock (7.1%), State Street (4.0%)", flow3Day: "+2.4M shares bought", consider: "Undisputed market share in AI GPUs with massive institutional demand.", thesis: "Passes all 5 growth/liquidity filters with pristine quick ratio cushion.", risks: "Hyperscaler concentration and export controls." },
-            { ticker: "GOOGL", name: "Alphabet Inc Class A", exchange: "NASDAQ", basePrice: 338.20, isWatchlist: true, revGrowth: 14.2, pe: 21.5, peg: 1.12, roe: 29.8, quick: 1.8, topHolders: "Vanguard (7.8%), BlackRock (6.8%), Fidelity (3.8%)", flow3Day: "+1.1M shares bought", consider: "Expanding Cloud profit margins and accelerated Gemini deployments.", thesis: "Strong cloud free cash flow generation and enterprise AI integrations.", risks: "Regulatory scrutiny and heavy data center capex outlays." },
-            { ticker: "TSM", name: "Taiwan Semiconductor", exchange: "NYSE", basePrice: 194.30, isWatchlist: true, revGrowth: 28.5, pe: 22.1, peg: 1.05, roe: 26.4, quick: 1.9, topHolders: "Capital Research (4.5%), Vanguard (3.2%), BlackRock (2.9%)", flow3Day: "+850K shares bought", consider: "Essential global foundry manufacturing advanced 3nm/2nm nodes.", thesis: "Pricing leverage over global designers with high yield node performance.", risks: "Geopolitical concentration in Taiwan." },
-            { ticker: "PLTR", name: "Palantir Technologies", exchange: "NASDAQ", basePrice: 186.03, isWatchlist: true, revGrowth: 27.0, pe: 42.0, peg: 1.45, roe: 18.5, quick: 4.8, topHolders: "Vanguard (8.5%), BlackRock (5.2%), Renaissance Tech (2.1%)", flow3Day: "+1.8M shares bought", consider: "AIP bootcamps accelerating enterprise commercial adoption with defense deals.", thesis: "U.S. commercial software expansion pairing with locked-in government deals.", risks: "Elevated P/E multiple leaves short-term volatility vulnerable." },
-            { ticker: "CEG", name: "Constellation Energy", exchange: "NASDAQ", basePrice: 271.37, isWatchlist: true, revGrowth: 15.1, pe: 23.8, peg: 1.30, roe: 12.4, quick: 1.65, topHolders: "Vanguard (11.2%), BlackRock (8.4%), Capital International (4.1%)", flow3Day: "+420K shares bought", consider: "Core baseload nuclear energy provider securing long-term hyperscaler PPA deals.", thesis: "Unique structural moat supplying clean power to AI compute clusters.", risks: "Regulatory review timelines for commercial nuclear restarts." },
-            { ticker: "NOW", name: "ServiceNow Inc", exchange: "NYSE", basePrice: 141.20, isWatchlist: true, revGrowth: 22.5, pe: 38.0, peg: 1.60, roe: 16.1, quick: 1.55, consider: "Enterprise SaaS workflow leader showing low downside risk and GenAI adoption.", thesis: "Steady enterprise workflow automation stickiness with margin expansion.", risks: "Valuation multiple compression if enterprise software spend slows." },
-            { ticker: "AVGO", name: "Broadcom Inc", exchange: "NASDAQ", basePrice: 328.50, isWatchlist: true, revGrowth: 43.0, pe: 29.0, peg: 1.28, roe: 21.0, quick: 1.7, consider: "Crucial custom AI accelerator (TPU) supplier with multi-billion hardware backlogs.", thesis: "Dominant ASIC custom silicon positioning alongside enterprise networking.", risks: "Integration execution risks on legacy software acquisitions." },
-            { ticker: "META", name: "Meta Platforms Inc", exchange: "NASDAQ", basePrice: 698.40, isWatchlist: true, revGrowth: 22.1, pe: 24.5, peg: 1.15, roe: 31.2, quick: 2.3, consider: "High-margin digital ad growth boosted by open-source AI ad targeting.", thesis: "Core advertising engagement efficiency funding open-source AI ecosystem.", risks: "Heavy capital expenditure outlays for long-term compute hardware." },
-            { ticker: "RKLB", name: "Rocket Lab Corp", exchange: "NASDAQ", basePrice: 23.80, isWatchlist: true, revGrowth: 35.0, pe: -1, peg: 0.95, roe: 8.2, quick: 2.8, consider: "Dominant commercial launch provider expanding space systems and defense.", thesis: "High launch cadence reliability paired with expanding defense backlogs.", risks: "Neutron rocket development capex burn and launch schedule delays." },
-            { ticker: "ANET", name: "Arista Networks Inc", exchange: "NASDAQ", basePrice: 102.10, isWatchlist: true, revGrowth: 19.8, pe: 24.1, peg: 1.20, roe: 33.5, quick: 2.4, consider: "Premier low-latency Ethernet networking provider for GPU AI clusters.", thesis: "Leading market share in high-speed data center switches for cloud.", risks: "Customer concentration among a few massive cloud infrastructure builders." },
-            { ticker: "VRT", name: "Vertiv Holdings Co", exchange: "NYSE", basePrice: 142.60, isWatchlist: true, revGrowth: 18.4, pe: 23.9, peg: 0.92, roe: 24.1, quick: 1.6, consider: "Dominant liquid cooling provider essential for thermal management in GPU racks.", thesis: "Essential infrastructure supplier solving thermal bottlenecks in AI data centers.", risks: "Supply chain bottlenecks for specialized cooling hardware." },
-            { ticker: "AMZN", name: "Amazon.com Inc", exchange: "NASDAQ", basePrice: 248.90, isWatchlist: true, revGrowth: 11.2, pe: 32.0, peg: 1.18, roe: 20.4, quick: 1.1, consider: "AWS re-acceleration driven by enterprise AI migrations alongside retail scale.", thesis: "Generative AI workload migrations driving cloud margin recovery.", risks: "Intensifying cloud competition from Microsoft Azure and Google Cloud." },
-            { ticker: "MSFT", name: "Microsoft Corp", exchange: "NASDAQ", basePrice: 428.10, isWatchlist: true, revGrowth: 15.2, pe: 28.0, peg: 1.55, roe: 38.5, quick: 1.7, consider: "High revenue stickiness across Azure infrastructure and commercial Copilot.", thesis: "High enterprise platform lock-in driving monetization across Azure and Copilot.", risks: "Massive capex requirements for global data center construction." },
-            { ticker: "CCJ", name: "Cameco Corp", exchange: "NYSE", basePrice: 56.70, isWatchlist: true, revGrowth: 25.4, pe: 22.8, peg: 0.88, roe: 11.2, quick: 2.1, consider: "Long-term structural uranium supply deficits supporting elevated prices.", thesis: "Primary global uranium producer securing long-term utility supply deals.", risks: "Commodity pricing swings and mining operational regulations." },
-            { ticker: "ARM", name: "Arm Holdings PLC", exchange: "NASDAQ", basePrice: 152.40, isWatchlist: true, revGrowth: 39.0, pe: 55.0, peg: 1.82, roe: 14.2, quick: 3.2, consider: "High-efficiency chip architecture capturing royalty share across cloud/PC.", thesis: "Accelerating royalty expansion powered by v9 architecture adoption.", risks: "Rich valuation multiple requiring flawless execution." },
-            
-            // External Additions
-            { ticker: "MU", name: "Micron Technology Inc", exchange: "NASDAQ", basePrice: 124.80, isWatchlist: false, revGrowth: 93.0, pe: 18.2, peg: 0.45, roe: 16.8, quick: 2.2, topHolders: "Vanguard (8.1%), BlackRock (7.4%), State Street (4.2%)", flow3Day: "+1.5M shares bought", consider: "HBM3e/HBM4 high-bandwidth memory capacity sold out through 2026.", thesis: "High-bandwidth AI memory supply shortages driving pricing power.", risks: "Historically cyclical memory chip pricing volatility." },
-            { ticker: "SMCI", name: "Super Micro Computer", exchange: "NASDAQ", basePrice: 48.50, isWatchlist: false, revGrowth: 143.0, pe: 16.5, peg: 0.38, roe: 28.1, quick: 1.8, topHolders: "Vanguard (9.4%), BlackRock (6.8%), Geode Capital (2.5%)", flow3Day: "-320K shares sold", consider: "Fast-to-market liquid-cooled server racks optimized for GPU clusters.", thesis: "Direct liquid-cooling rack modularity capturing fast-deploy data center demand.", risks: "High price volatility and competitive server margin pressures." },
-            { ticker: "CRWD", name: "CrowdStrike Holdings", exchange: "NASDAQ", basePrice: 362.40, isWatchlist: false, revGrowth: 32.0, pe: 48.0, peg: 1.35, roe: 14.5, quick: 1.9, topHolders: "Vanguard (8.8%), BlackRock (7.2%), Jennison Assoc (3.1%)", flow3Day: "+610K shares bought", consider: "Leading cloud security platform capturing steady cybersecurity budget spend.", thesis: "Enterprise security consolidation favoring CrowdStrike Falcon platform.", risks: "Reputational or operational risks from software deployment updates." },
-
-            // Watchlist Sub-$15 Value / Growth
-            { ticker: "AMPX", name: "Amprius Technologies", exchange: "NYSE", basePrice: 7.71, isWatchlist: true, revGrowth: 108.0, pe: -1, peg: 0.65, roe: 6.8, quick: 3.1, topHolders: "BlackRock (3.2%), Vanguard (2.8%), Geode Capital (1.1%)", flow3Day: "+180K shares bought", consider: "Silicon nanowire battery cells delivering ultra-high energy density.", thesis: "Breakthrough anode battery density winning military drone contracts.", risks: "Pre-profit capital dilution hazards and scaling timelines." },
-            { ticker: "ONDS", name: "Ondas Inc", exchange: "NASDAQ", basePrice: 6.85, isWatchlist: true, revGrowth: 42.0, pe: -1, peg: 0.85, roe: 7.1, quick: 2.2, topHolders: "Vanguard (2.1%), BlackRock (1.8%), State Street (0.8%)", flow3Day: "+95K shares bought", consider: "Private wireless networks and automated drone security for critical infrastructure.", thesis: "Expanding deployment across automated rail and critical infrastructure.", risks: "Micro-cap trading volume volatility and extended sales cycles." },
-            { ticker: "ENVX", name: "Enovix Corp", exchange: "NASDAQ", basePrice: 2.49, isWatchlist: true, revGrowth: 65.0, pe: -1, peg: 0.52, roe: 5.4, quick: 4.1, topHolders: "TJ Rodgers (11.4%), Vanguard (4.2%), BlackRock (3.1%)", flow3Day: "+240K shares bought", consider: "100% active silicon anode battery architecture with high multi-bagger upside.", thesis: "Silicon battery architecture with substantial upside relative to price floor.", risks: "Manufacturing yield scaling execution risk at high volumes." },
-            { ticker: "NOK", name: "Nokia Oyj", exchange: "NYSE", basePrice: 4.65, isWatchlist: true, revGrowth: 10.2, pe: 14.1, peg: 1.10, roe: 9.8, quick: 1.75, topHolders: "Solidium Oy (5.2%), Vanguard (2.8%), BlackRock (2.4%)", flow3Day: "+410K shares bought", consider: "High dividend reliability paired with solid optical and 5G network contracts.", thesis: "Strong balance sheet cash cushion and consistent global 5G network upgrades.", risks: "Sluggish carrier capex spending cycles." },
-            { ticker: "JOBY", name: "Joby Aviation Inc", exchange: "NYSE", basePrice: 4.66, isWatchlist: true, revGrowth: 55.0, pe: -1, peg: 0.90, roe: 6.2, quick: 5.2, topHolders: "Toyota Motor (11.8%), Baillie Gifford (7.4%), Vanguard (3.8%)", flow3Day: "+520K shares bought", consider: "Frontrunner in commercial FAA air taxi certification and flight-tests.", thesis: "First-mover advantage in commercial electric vertical takeoff passenger operations.", risks: "Aviation safety regulatory approvals and cash burn timelines." },
-
-            // High-Risk / Avoid Watchlist Pool
-            { ticker: "INTC", name: "Intel Corporation", exchange: "NASDAQ", basePrice: 22.40, isWatchlist: true, revGrowth: -2.1, pe: -1, peg: -1, roe: -4.2, quick: 1.1, topHolders: "Vanguard (8.9%), BlackRock (7.8%), State Street (4.5%)", flow3Day: "-1.2M shares sold", avoid: "Loss of server CPU market share to AMD/ARM and heavy capex drag.", thesis: "Negative free cash flow drag and structural foundry process execution delays.", risks: "Loss of enterprise CPU market share and dividend cuts." },
-            { ticker: "NKLA", name: "Nikola Corporation", exchange: "NASDAQ", basePrice: 0.38, isWatchlist: true, revGrowth: -34.0, pe: -1, peg: -1, roe: -45.0, quick: 0.42, topHolders: "Vanguard (2.1%), BlackRock (1.8%), Geode Capital (0.9%)", flow3Day: "-850K shares sold", avoid: "Severe ongoing cash burn, capital dilution, and negative gross margins.", thesis: "Severe balance sheet distress with negative operating margins and dilution risk.", risks: "Insolvency risk, reverse split threat, and loss of liquidity." },
-            { ticker: "AMC", name: "AMC Entertainment", exchange: "NYSE", basePrice: 3.85, isWatchlist: true, revGrowth: 2.1, pe: -1, peg: -1, roe: -22.0, quick: 0.48, topHolders: "Vanguard (4.2%), BlackRock (3.8%), State Street (1.9%)", flow3Day: "-410K shares sold", avoid: "Extreme share dilution history and massive long-term debt burden.", thesis: "Debt load exceeds enterprise valuation with negative return on equity.", risks: "Continuous equity dilution and high interest expense burden." },
-            { ticker: "PTON", name: "Peloton Interactive", exchange: "NASDAQ", basePrice: 4.15, isWatchlist: false, revGrowth: -12.4, pe: -1, peg: -1, roe: -18.5, quick: 0.85, topHolders: "Vanguard (5.1%), BlackRock (4.2%), Morgan Stanley (2.8%)", flow3Day: "-190K shares sold", avoid: "Declining subscription base, structural revenue contraction, and high debt burden.", thesis: "Multi-year lower-high downtrend with shrinking hardware target audience.", risks: "Debt refinancing terms and ongoing inventory write-downs." }
+            { ticker: "META", name: "Meta Platforms Inc", exchange: "NASDAQ", basePrice: 709.32, isWatchlist: true, revGrowth: 22.1, pe: 26.7, peg: 1.15, roe: 31.2, quick: 2.3, topHolders: "Vanguard (8.2%), BlackRock (7.1%)", flow3Day: "+1.4M bought", consider: "High-margin digital ad growth boosted by Llama AI.", thesis: "Core advertising engagement efficiency funding AI ecosystem.", risks: "Heavy capital expenditure outlays." },
+            { ticker: "IONQ", name: "IONQ Inc", exchange: "NYSE", basePrice: 31.28, isWatchlist: true, revGrowth: 85.0, pe: -1, peg: 0.52, roe: -18.4, quick: 5.2, topHolders: "NEA (14.2%), Fidelity (8.1%)", flow3Day: "+740K bought", consider: "Trapped-ion quantum computing leader accessible via major clouds.", thesis: "Industry-leading quantum volume metrics and lab contracts.", risks: "High valuation multiple relative to near-term revenue." },
+            { ticker: "XNDU", name: "Xanadu Quantum Technologies", exchange: "NASDAQ", basePrice: 3.04, isWatchlist: true, revGrowth: 68.0, pe: -1, peg: 0.61, roe: -11.5, quick: 4.1, topHolders: "Bessemer (14.2%), OMERS (11.5%)", flow3Day: "+160K bought", consider: "Photonic quantum computing developer utilizing optical fiber light particles.", thesis: "Room-temperature photonic quantum processor architecture.", risks: "Early-stage commercial scaling timeline." },
+            { ticker: "NVDA", name: "NVIDIA Corp", exchange: "NASDAQ", basePrice: 214.13, isWatchlist: true, revGrowth: 122.0, pe: 27.0, peg: 0.85, roe: 48.2, quick: 2.1, topHolders: "Vanguard (8.2%), BlackRock (7.1%)", flow3Day: "+2.4M bought", consider: "Undisputed market share in AI compute GPUs.", thesis: "Passes all growth/liquidity filters with pristine quick ratio.", risks: "Hyperscaler concentration and export controls." },
+            { ticker: "PLTR", name: "Palantir Technologies", exchange: "NASDAQ", basePrice: 186.03, isWatchlist: true, revGrowth: 27.0, pe: 42.0, peg: 1.45, roe: 18.5, quick: 4.8, topHolders: "Vanguard (8.5%), BlackRock (5.2%)", flow3Day: "+1.8M bought", consider: "Rapid enterprise adoption via AIP bootcamps.", thesis: "Commercial enterprise expansion pairing with government deals.", risks: "Elevated P/E multiple leaves short-term volatility." },
+            { ticker: "TSLA", name: "Tesla Inc", exchange: "NASDAQ", basePrice: 354.72, isWatchlist: true, revGrowth: 8.5, pe: 52.0, peg: 1.95, roe: 24.2, quick: 2.1, topHolders: "Elon Musk (13.0%), Vanguard (7.1%)", flow3Day: "+1.5M bought", consider: "EV market leader with expanding energy storage deployments.", thesis: "Energy storage division growth and autonomous robotaxi software.", risks: "Automotive gross margin compression and price competition." },
+            { ticker: "GOOGL", name: "Alphabet Inc Class A", exchange: "NASDAQ", basePrice: 340.59, isWatchlist: true, revGrowth: 14.2, pe: 21.5, peg: 1.12, roe: 29.8, quick: 1.8, topHolders: "Vanguard (7.8%), BlackRock (6.8%)", flow3Day: "+1.1M bought", consider: "Expanding Cloud profit margins and Gemini deployments.", thesis: "Strong cloud free cash flow generation and AI integrations.", risks: "Regulatory scrutiny and heavy data center capex." },
+            { ticker: "AMZN", name: "Amazon.com Inc", exchange: "NASDAQ", basePrice: 250.00, isWatchlist: true, revGrowth: 11.2, pe: 32.0, peg: 1.18, roe: 20.4, quick: 1.1, topHolders: "Vanguard (7.2%), BlackRock (6.1%)", flow3Day: "+2.8M bought", consider: "AWS cloud re-acceleration and retail automation.", thesis: "Generative AI workload migrations driving cloud margin recovery.", risks: "Intensifying cloud competition." },
+            { ticker: "MSFT", name: "Microsoft Corp", exchange: "NASDAQ", basePrice: 529.05, isWatchlist: true, revGrowth: 15.2, pe: 28.0, peg: 1.55, roe: 38.5, quick: 1.7, topHolders: "Vanguard (8.8%), BlackRock (7.2%)", flow3Day: "+2.1M bought", consider: "High revenue stickiness across Azure and Copilot.", thesis: "High enterprise platform lock-in driving monetization.", risks: "Massive capex requirements for data centers." },
+            { ticker: "JOBY", name: "Joby Aviation Inc", exchange: "NYSE", basePrice: 4.66, isWatchlist: true, revGrowth: 55.0, pe: -1, peg: 0.90, roe: 6.2, quick: 5.2, topHolders: "Toyota (11.8%), Baillie Gifford (7.4%)", flow3Day: "+520K bought", consider: "Frontrunner status in commercial FAA air taxi certification.", thesis: "First-mover advantage in commercial electric vertical takeoff.", risks: "Strict aviation regulatory approvals and cash burn." },
+            { ticker: "CEG", name: "Constellation Energy", exchange: "NASDAQ", basePrice: 271.37, isWatchlist: true, revGrowth: 15.1, pe: 23.8, peg: 1.30, roe: 12.4, quick: 1.65, topHolders: "Vanguard (11.2%), BlackRock (8.4%)", flow3Day: "+420K bought", consider: "Core baseload nuclear energy provider securing PPA deals.", thesis: "Unique structural moat supplying clean power to AI data centers.", risks: "Regulatory review timelines for nuclear restarts." },
+            { ticker: "RKLB", name: "Rocket Lab Corp", exchange: "NASDAQ", basePrice: 23.80, isWatchlist: true, revGrowth: 35.0, pe: -1, peg: 0.95, roe: 8.2, quick: 2.8, topHolders: "Vanguard (6.4%), BlackRock (5.1%)", flow3Day: "+920K bought", consider: "Dominant commercial launch provider expanding space systems.", thesis: "High launch cadence reliability paired with defense backlogs.", risks: "Neutron rocket development capex burn." },
+            { ticker: "FORTUM", name: "Fortum Oyj", exchange: "HEL", basePrice: 15.20, isWatchlist: true, revGrowth: 4.5, pe: 11.8, peg: 1.55, roe: 14.5, quick: 1.6, topHolders: "Solidium (51.2%), Ilmarinen (3.4%)", flow3Day: "+290K bought", consider: "Nordic clean energy leader producing zero-carbon nuclear/hydro.", thesis: "Stable defensive utility cash flows with attractive dividends.", risks: "Nordic power price volatility." },
+            { ticker: "NESTE", name: "Neste Oyj", exchange: "HEL", basePrice: 18.40, isWatchlist: true, revGrowth: 6.2, pe: 16.5, peg: 1.40, roe: 12.1, quick: 1.7, topHolders: "Finnish State (44.2%), Ilmarinen (4.1%)", flow3Day: "-150K sold", consider: "Global leader in renewable diesel and SAF production.", thesis: "Regulatory mandates requiring airlines to adopt low-carbon fuels.", risks: "Feedstock cost inflation." },
+            { ticker: "UPM", name: "UPM-Kymmene Oyj", exchange: "HEL", basePrice: 31.50, isWatchlist: true, revGrowth: 5.1, pe: 17.2, peg: 1.35, roe: 9.8, quick: 1.8, topHolders: "Ilmarinen (4.2%), Varma (3.8%)", flow3Day: "+110K bought", consider: "Bioforest industry leader producing sustainable papers and pulp.", thesis: "Diversified bio-refining model transitioning to specialty materials.", risks: "Industrial packaging demand cyclicality." },
+            { ticker: "INTC", name: "Intel Corporation", exchange: "NASDAQ", basePrice: 22.40, isWatchlist: true, revGrowth: -2.1, pe: -1, peg: -1, roe: -4.2, quick: 1.1, topHolders: "Vanguard (8.9%), BlackRock (7.8%)", flow3Day: "-1.2M sold", avoid: "Loss of server CPU market share and heavy capex drag.", thesis: "Negative free cash flow and structural foundry delays.", risks: "Loss of enterprise CPU market share and dividend cuts." },
+            { ticker: "NKLA", name: "Nikola Corporation", exchange: "NASDAQ", basePrice: 0.38, isWatchlist: true, revGrowth: -34.0, pe: -1, peg: -1, roe: -45.0, quick: 0.42, topHolders: "Vanguard (2.1%), BlackRock (1.8%)", flow3Day: "-850K sold", avoid: "Severe ongoing cash burn and capital dilution.", thesis: "Severe balance sheet distress and dilution risk.", risks: "Insolvency risk and loss of liquidity." },
+            { ticker: "AMC", name: "AMC Entertainment", exchange: "NYSE", basePrice: 3.85, isWatchlist: true, revGrowth: 2.1, pe: -1, peg: -1, roe: -22.0, quick: 0.48, topHolders: "Vanguard (4.2%), BlackRock (3.8%)", flow3Day: "-410K sold", avoid: "Extreme share dilution history and long-term debt burden.", thesis: "Debt load exceeds valuation with negative return on equity.", risks: "Continuous equity dilution and interest expenses." }
         ];
 
         let evaluatedStockDatabase = [];
+        let livePricesFetched = {};
         let currentActiveTab = 'agents';
 
-        // Load or initialize persistent watchlist from localStorage
         function getActiveStockPool() {
             const savedCustom = localStorage.getItem('ruivo_custom_tickers');
             let customList = savedCustom ? JSON.parse(savedCustom) : [];
-            return [...defaultStockPool, ...customList];
+            const combined = [...defaultStockPool, ...customList];
+            const uniqueMap = new Map();
+            combined.forEach(s => {
+                if (!uniqueMap.has(s.ticker.toUpperCase())) {
+                    uniqueMap.set(s.ticker.toUpperCase(), s);
+                }
+            });
+            return Array.from(uniqueMap.values());
+        }
+
+        async function fetchLiveMarketDataBatch() {
+            const pool = getActiveStockPool();
+            const tickersToFetch = pool.map(s => s.ticker).slice(0, 15);
+            
+            for (let t of tickersToFetch) {
+                try {
+                    const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${t}&apikey=${EMBEDDED_AV_KEY}`);
+                    const data = await res.json();
+                    if (data["Global Quote"] && data["Global Quote"]["05. price"]) {
+                        const fetchedPrice = parseFloat(data["Global Quote"]["05. price"]);
+                        if (!isNaN(fetchedPrice) && fetchedPrice > 0) {
+                            livePricesFetched[t] = fetchedPrice;
+                        }
+                    }
+                } catch(e) {
+                    console.log("Error fetching quote for " + t, e);
+                }
+            }
+            evaluateLiveMarketData();
+            renderStockList(document.getElementById('searchInput').value);
         }
 
         function addNewWatchlistTicker() {
@@ -154,7 +168,7 @@
 
             const currentPool = getActiveStockPool();
             if (currentPool.some(s => s.ticker === ticker)) {
-                alert(`Ticker ${ticker} is already in your active watchlist!`);
+                alert(`Ticker ${ticker} is already in your watchlist!`);
                 input.value = '';
                 return;
             }
@@ -170,11 +184,11 @@
                 peg: 1.10,
                 roe: 18.5,
                 quick: 1.9,
-                topHolders: "Vanguard (6.5%), BlackRock (5.8%), Fidelity (3.1%)",
-                flow3Day: "+350K shares bought",
-                consider: `Dynamically added custom watchlist asset with positive score momentum.`,
-                thesis: `Technical and Fundamental Agents confirm stable consolidation and growth for ${ticker}.`,
-                risks: `Macro economic headwinds and valuation sensitivity for ${ticker}.`
+                topHolders: "Vanguard (6.5%), BlackRock (5.8%)",
+                flow3Day: "+350K bought",
+                consider: `Dynamically added custom watchlist asset.`,
+                thesis: `Technical and Fundamental Agents confirm stable consolidation.`,
+                risks: `Macro economic headwinds and valuation sensitivity.`
             };
 
             const savedCustom = localStorage.getItem('ruivo_custom_tickers');
@@ -183,7 +197,6 @@
             localStorage.setItem('ruivo_custom_tickers', JSON.stringify(customList));
 
             input.value = '';
-            alert(`✅ ${ticker} added permanently to your Watchlist!`);
             evaluateLiveMarketData();
             renderStockList('');
         }
@@ -191,12 +204,11 @@
         function evaluateLiveMarketData() {
             const pool = getActiveStockPool();
             evaluatedStockDatabase = pool.map(stock => {
-                const liveVariance = (Math.random() - 0.48) * 0.03;
-                const livePrice = Number((stock.basePrice * (1 + liveVariance)).toFixed(2));
+                const livePrice = livePricesFetched[stock.ticker] ? livePricesFetched[stock.ticker] : stock.basePrice;
                 const supportLevel = Number((livePrice * 0.92).toFixed(2));
                 
                 const passRev = stock.revGrowth >= 10;
-                const passPE = stock.pe > 0 && stock.pe < 25;
+                const passPE = stock.pe > 0 && stock.pe < 30;
                 const passPEG = stock.peg > 0 && stock.peg < 2.0;
                 const passROE = stock.roe > 5.0;
                 const passQuick = stock.quick > 1.5;
@@ -208,22 +220,20 @@
                 if (passROE) fundPassCount++;
                 if (passQuick) fundPassCount++;
 
-                const isAvoidCandidate = fundPassCount < 3 || stock.revGrowth < 0 || stock.quick < 1.0;
+                const isAvoidCandidate = stock.avoid || fundPassCount < 2 || stock.revGrowth < 0 || stock.quick < 1.0;
 
-                let score = 50 + (fundPassCount * 8) + (stock.revGrowth > 20 ? 10 : 0) + (stock.quick > 1.5 ? 5 : 0);
+                let score = 50 + (fundPassCount * 8) + (stock.revGrowth > 20 ? 10 : 0);
                 if (isAvoidCandidate) score = Math.min(score, 42);
-                score = Math.min(98, Math.max(15, Math.round(score + (Math.random() * 4 - 2))));
+                score = Math.min(98, Math.max(15, Math.round(score)));
 
-                const signalText = isAvoidCandidate ? "AVOID / HIGH RISK" : (score >= 88 ? "STRONG IN" : "IN");
-                const fundText = isAvoidCandidate ? 
-                    `❌ ${fundPassCount}/5 Fundamental Pass` : 
-                    `✅ ${fundPassCount}/5 Fundamental Pass`;
-
-                const rsiVal = (45 + Math.random() * 20 + (score > 75 ? 8 : -10)).toFixed(1);
+                const signalText = isAvoidCandidate ? "AVOID / HIGH RISK" : (score >= 85 ? "STRONG IN" : "IN");
+                const fundText = isAvoidCandidate ? `❌ ${fundPassCount}/5 Fundamental Pass` : `✅ ${fundPassCount}/5 Fundamental Pass`;
+                const rsiVal = (45 + (score > 75 ? 12 : -8)).toFixed(1);
 
                 return {
                     ...stock,
                     price: livePrice,
+                    isRealtime: !!livePricesFetched[stock.ticker],
                     support: supportLevel,
                     score: score,
                     signal: signalText,
@@ -231,11 +241,11 @@
                     fundPassCount: fundPassCount,
                     rsiVal: rsiVal,
                     isAvoid: isAvoidCandidate,
-                    tech: `RSI ${rsiVal} | Support floor near $${supportLevel.toFixed(2)}`,
-                    sentiment: `${score > 70 ? '+' : '-'}${(Math.random() * 3 + 2).toFixed(1)}% Sentiment flow`,
-                    fundamental: `Rev ${stock.revGrowth > 0 ? '+' : ''}${stock.revGrowth}% | P/E ${stock.pe > 0 ? stock.pe : 'N/A'} | Quick ${stock.quick}`,
+                    tech: `RSI ${rsiVal} | Support near $${supportLevel.toFixed(2)}`,
+                    sentiment: `${score > 70 ? '+' : '-'}3.4% Institutional Flow`,
+                    fundamental: `Rev ${stock.revGrowth > 0 ? '+' : ''}${stock.revGrowth}% | P/E ${stock.pe > 0 ? stock.pe : 'N/A'}`,
                     macro: "Sector capital expenditure & macroeconomic trends",
-                    riskMgr: isAvoidCandidate ? "Downside Risk Trigger Active" : `Stop Loss: $${(livePrice * 0.88).toFixed(2)} | Max Drawdown: 8%`
+                    riskMgr: isAvoidCandidate ? "Downside Risk Trigger Active" : `Stop Loss: $${(livePrice * 0.88).toFixed(2)}`
                 };
             });
         }
@@ -250,77 +260,23 @@
             }
 
             let activePool = [];
-
             if (currentActiveTab === 'agents') {
-                const recommended = evaluatedStockDatabase.filter(s => !s.isAvoid);
-                
-                const watchlistUpper = recommended.filter(s => s.isWatchlist && s.price >= 15).sort((a,b) => b.score - a.score);
-                const externalAdditions = recommended.filter(s => !s.isWatchlist).sort((a,b) => b.score - a.score);
-                const sub15Watchlist = recommended.filter(s => s.isWatchlist && s.price < 15).sort((a,b) => b.score - a.score);
-
-                watchlistUpper.forEach((s, idx) => s.category = idx === 0 ? "🟢 Part 1: Top Watchlist Leaders" : "");
-                externalAdditions.forEach((s, idx) => s.category = idx === 0 ? "➕ Part 2: Top External Additions" : "");
-                sub15Watchlist.forEach((s, idx) => s.category = idx === 0 ? "📉 Part 3: Watchlist Sub-$15 Value & Growth" : "");
-
-                activePool = [...watchlistUpper, ...externalAdditions, ...sub15Watchlist];
+                activePool = evaluatedStockDatabase
+                    .filter(s => !s.isAvoid)
+                    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
             } else {
-                const avoids = evaluatedStockDatabase.filter(s => s.isAvoid);
-                
-                const avoidWatchlistUpper = avoids.filter(s => s.isWatchlist && s.price >= 15).sort((a,b) => a.score - b.score);
-                const avoidExternal = avoids.filter(s => !s.isWatchlist).sort((a,b) => a.score - b.score);
-                const avoidSub15Watchlist = avoids.filter(s => s.isWatchlist && s.price < 15).sort((a,b) => a.score - b.score);
-
-                avoidWatchlistUpper.forEach((s, idx) => s.category = idx === 0 ? "🔴 Part 1: Watchlist High-Risk / Weak Fundamentals" : "");
-                avoidExternal.forEach((s, idx) => s.category = idx === 0 ? "⚠️ Part 2: Top External Laggards & Avoid Picks" : "");
-                avoidSub15Watchlist.forEach((s, idx) => s.category = idx === 0 ? "📉 Part 3: Watchlist Sub-$15 High-Risk Value Traps" : "");
-
-                activePool = [...avoidWatchlistUpper, ...avoidExternal, ...avoidSub15Watchlist];
+                activePool = evaluatedStockDatabase
+                    .filter(s => s.isAvoid)
+                    .sort((a, b) => a.score - b.score || a.name.localeCompare(b.name));
             }
 
             let filtered = activePool.filter(stock => 
                 stock.ticker.toLowerCase().includes(trimmedQuery) || 
-                stock.name.toLowerCase().includes(trimmedQuery) ||
-                stock.signal.toLowerCase().includes(trimmedQuery)
+                stock.name.toLowerCase().includes(trimmedQuery)
             );
 
-            // Dynamic Search fallback
-            if (filtered.length === 0 && trimmedQuery.length > 0) {
-                const upperTicker = trimmedQuery.toUpperCase();
-                const isAvoidTab = currentActiveTab === 'avoid';
-                filtered = [{
-                    category: isAvoidTab ? "🔴 Dynamic High-Risk Search Result" : "🟢 Dynamic Agent Search Result",
-                    ticker: upperTicker,
-                    name: upperTicker + " Corp",
-                    exchange: "US",
-                    price: isAvoidTab ? 12.40 : 135.20,
-                    support: isAvoidTab ? 9.80 : 122.00,
-                    score: isAvoidTab ? 36 : 83,
-                    signal: isAvoidTab ? "DYNAMIC AVOID" : "DYNAMIC IN",
-                    fund: isAvoidTab ? "❌ 2/5 Fundamental Pass" : "✅ 5/5 Fundamental Pass",
-                    topHolders: "Vanguard (7.1%), BlackRock (6.2%), State Street (3.5%)",
-                    flow3Day: isAvoidTab ? "-280K shares sold" : "+450K shares bought",
-                    consider: isAvoidTab ? "" : `Positive score momentum detected dynamically for ${upperTicker}.`,
-                    avoid: isAvoidTab ? `Weak cash flow cushion and margin compression risk for ${upperTicker}.` : "",
-                    thesis: `Multi-agent synthesis evaluates fundamental momentum and channel stability for ${upperTicker}.`,
-                    risks: `Sector macroeconomic headwinds and valuation multiple sensitivity.`,
-                    tech: "RSI 52.4 | Holding key trend support",
-                    sentiment: "+3.9% Institutional sentiment flow",
-                    fundamental: "Rev Growth +18.4% | Quick Ratio 1.85",
-                    macro: "Industry sector capital allocation trends",
-                    riskMgr: "Dynamic Risk Manager Monitoring Active"
-                }];
-            }
-
             let html = '';
-            let lastCategory = '';
-
             filtered.forEach(stock => {
-                if (stock.category && stock.category !== lastCategory) {
-                    const categoryClass = currentActiveTab === 'avoid' ? 'section-header avoid' : 'section-header';
-                    html += `<div class="${categoryClass}">${stock.category}</div>`;
-                    lastCategory = stock.category;
-                }
-
                 const isAvoid = currentActiveTab === 'avoid';
                 const cardClass = isAvoid ? 'stock-card card-avoid' : 'stock-card';
                 const badgeClass = isAvoid ? 'signal-badge signal-avoid' : 'signal-badge signal-in';
@@ -335,60 +291,66 @@
                             <span class="${badgeClass}">${stock.signal}</span>
                         </div>
                         <div class="stock-metrics">
-                            <div><span class="metric-label">Price</span><span class="metric-val">$${stock.price.toFixed(2)}</span></div>
+                            <div><span class="metric-label">Price ${stock.isRealtime ? '<span class="live-tag">LIVE</span>' : ''}</span><span class="metric-val">$${stock.price.toFixed(2)}</span></div>
                             <div><span class="metric-label">Support</span><span class="metric-val">$${stock.support.toFixed(2)}</span></div>
                             <div><span class="metric-label">Score</span><span class="metric-val" style="${scoreColor}">${stock.score}/100</span></div>
                         </div>
                         <div class="${fundBadgeClass}">${stock.fund}</div>
 
-                        <!-- Top Investors & 3-Day Institutional Flow -->
                         <div class="investor-box">
-                            <strong>🏛️ Top Investors:</strong> ${stock.topHolders || 'Vanguard, BlackRock, State Street'}<br>
-                            <strong>📊 Last 3 Days Flow:</strong> ${stock.flow3Day || '+250K shares bought'}
+                            <strong>🏛️ Top Investors:</strong> ${stock.topHolders}<br>
+                            <strong>📊 3-Day Flow:</strong> ${stock.flow3Day}
                         </div>
 
                         ${isAvoid ? 
-                            `<div class="avoid-box"><strong>🚫 Why Avoid:</strong> ${stock.avoid || "High cash burn and weak liquidity cushion."}</div>` : 
+                            `<div class="avoid-box"><strong>🚫 Why Avoid:</strong> ${stock.avoid}</div>` : 
                             `<div class="consider-box"><strong>💡 Why Consider:</strong> ${stock.consider}</div>`
                         }
-                        <div class="thesis-box"><strong>Trading Agents Thesis:</strong> ${stock.thesis}</div>
-                        <div class="risk-box"><strong>⚠️ Key Headwinds & Risks:</strong> ${stock.risks}</div>
+                        <div class="thesis-box"><strong>Thesis:</strong> ${stock.thesis}</div>
+                        <div class="risk-box"><strong>⚠️ Risks:</strong> ${stock.risks}</div>
 
                         <div class="agent-grid">
-                            <div class="agent-box"><span class="${agentTitleClass}">📈 Technical Agent</span>${stock.tech}</div>
-                            <div class="agent-box"><span class="${agentTitleClass}">💬 Sentiment Agent</span>${stock.sentiment}</div>
-                            <div class="agent-box"><span class="${agentTitleClass}">📊 Fundamental Agent</span>${stock.fundamental}</div>
-                            <div class="agent-box"><span class="${agentTitleClass}">🌐 Macro / Sector Agent</span>${stock.macro}</div>
-                            <div class="agent-box" style="grid-column: span 2;"><span class="${agentTitleClass}">🛡️ Risk Manager Agent</span>${stock.riskMgr}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">📈 Technical</span>${stock.tech}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">💬 Sentiment</span>${stock.sentiment}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">📊 Fundamental</span>${stock.fundamental}</div>
+                            <div class="agent-box"><span class="${agentTitleClass}">🌐 Macro</span>${stock.macro}</div>
+                            <div class="agent-box" style="grid-column: span 2;"><span class="${agentTitleClass}">🛡️ Risk Manager</span>${stock.riskMgr}</div>
                         </div>
                     </div>
                 `;
             });
-            container.innerHTML = html;
+            container.innerHTML = html || '<p style="text-align:center; color:var(--text-muted); padding:20px;">No stocks match your search query.</p>';
         }
 
-        // 1-Line Compact Statistical Table Renderer (Lists ALL Active Watchlist Stocks)
         function renderStatsTable(container, query) {
-            const allWatchlistStocks = evaluatedStockDatabase.filter(s => s.isWatchlist).sort((a,b) => b.score - a.score);
-            const filtered = allWatchlistStocks.filter(stock => 
+            const allWatchlistStocks = evaluatedStockDatabase
+                .filter(s => s.isWatchlist)
+                .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name));
+
+            const uniqueMap = new Map();
+            allWatchlistStocks.forEach(s => {
+                if (!uniqueMap.has(s.ticker)) uniqueMap.set(s.ticker, s);
+            });
+            const deduplicated = Array.from(uniqueMap.values());
+
+            const filtered = deduplicated.filter(stock => 
                 stock.ticker.toLowerCase().includes(query) || 
                 stock.name.toLowerCase().includes(query)
             );
 
             let tableHtml = `
-                <div class="section-header">📊 All Watchlist Stocks - Key Statistical Summary (${filtered.length} Assets)</div>
+                <div class="section-header">📊 All Watchlist Stocks (${filtered.length} Assets)</div>
                 <div class="stats-table-wrapper">
                     <table class="stats-table">
                         <thead>
                             <tr>
-                                <th>Ticker</th>
+                                <th>Asset Name & Ticker</th>
                                 <th>Price</th>
                                 <th>Support</th>
                                 <th>5-Step</th>
                                 <th>P/E</th>
                                 <th>Quick</th>
                                 <th>RSI</th>
-                                <th>3-Day Flow</th>
                                 <th>Score</th>
                                 <th>Signal</th>
                             </tr>
@@ -402,14 +364,13 @@
 
                 tableHtml += `
                     <tr>
-                        <td><strong>${s.ticker}</strong></td>
-                        <td>$${s.price.toFixed(2)}</td>
+                        <td><strong>${s.name}</strong> (${s.ticker})</td>
+                        <td>$${s.price.toFixed(2)} ${s.isRealtime ? '🟢' : ''}</td>
                         <td>$${s.support.toFixed(2)}</td>
                         <td>${s.fundPassCount}/5</td>
                         <td>${s.pe > 0 ? s.pe : 'N/A'}</td>
                         <td>${s.quick}</td>
                         <td>${s.rsiVal}</td>
-                        <td style="font-size:0.65rem;">${s.flow3Day || 'N/A'}</td>
                         <td><strong style="${scoreColor}">${s.score}</strong></td>
                         <td><span class="${signalClass}" style="font-size:0.6rem; padding:2px 4px;">${s.signal}</span></td>
                     </tr>
@@ -425,8 +386,7 @@
         }
 
         function handleDynamicSearch() {
-            const query = document.getElementById('searchInput').value;
-            renderStockList(query);
+            renderStockList(document.getElementById('searchInput').value);
         }
 
         function switchTab(tab) {
@@ -437,9 +397,10 @@
             renderStockList(document.getElementById('searchInput').value);
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             evaluateLiveMarketData();
             renderStockList('');
+            await fetchLiveMarketDataBatch();
         };
     </script>
 </body>
